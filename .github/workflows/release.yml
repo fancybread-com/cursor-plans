@@ -34,55 +34,18 @@ jobs:
         skip-existing: true
 
     - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: actions/github-script@v7
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-        body: |
-          ## Cursor Plans MCP Server Release
-
-          ### Installation
-
-          **From PyPI:**
-          ```bash
-          pip install cursor-plans
-          ```
-
-          **From source:**
-          ```bash
-          git clone https://github.com/${{ github.repository }}
-          cd cursor-plans
-          pip install -e .
-          ```
-
-          ### Usage
-
-          ```bash
-          # Run MCP server
-          python -m cursor_plans_mcp.server
-
-          # Or use the entry point
-          cursor-plans
-          ```
-
-          ### MCP Configuration
-
-          Add to your Cursor MCP configuration:
-          ```json
-          {
-            "mcpServers": {
-              "cursor-plans": {
-                "command": "python",
-                "args": ["-m", "cursor_plans_mcp.server"]
-              }
-            }
-          }
-          ```
-
-          ### Changes
-
-          See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+        script: |
+          const tag = context.ref.replace('refs/tags/', '');
+          const releaseName = `Release ${tag}`;
+          
+          await github.rest.repos.createRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag_name: tag,
+            name: releaseName,
+            draft: false,
+            prerelease: false,
+            body: 'Cursor Plans MCP Server Release - See CHANGELOG.md for details.'
+          });
