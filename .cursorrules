@@ -1,0 +1,179 @@
+# Cursor Plans MCP - Development Rules
+
+## Project Overview
+This is a Model Context Protocol (MCP) server that provides a Terraform-like DSL for structured software development planning with Cursor. The project brings Infrastructure-as-Code principles to application development.
+
+## Architecture & Structure
+
+### Project Layout
+- Use **src layout** pattern: `src/cursor_plans_mcp/` contains the main package
+- Follow **modern Python packaging** standards with `pyproject.toml`
+- Maintain **comprehensive test coverage** in `tests/` directory
+- Keep **documentation** up-to-date and community-ready
+
+### Core Components
+- **MCP Server** (`server.py`): Entry point for Model Context Protocol
+- **DSL Engine** (`dsl/`): Domain-specific language parser and interpreter
+- **Execution Engine** (`execution/`): Plan execution and state management
+- **Validation Framework** (`validation/`): Multi-layer validation system
+- **State Management** (`state/`): Snapshot and rollback capabilities
+- **Template System** (`templates/`): Code generation templates
+
+## Python Development Standards
+
+### Code Quality
+- **Type Hints**: Use type hints for all function parameters and return values
+- **Docstrings**: Write comprehensive docstrings for all public APIs
+- **Error Handling**: Implement proper exception handling with meaningful messages
+- **Logging**: Use structured logging for debugging and monitoring
+- **Testing**: Maintain high test coverage with pytest
+
+### Style Guidelines
+- Follow **PEP 8** style guidelines
+- Use **Black** for code formatting (configured in pyproject.toml)
+- Use **Ruff** for linting and import sorting
+- Use **Pyright** for type checking
+- Keep functions **small and focused** (max 50 lines)
+- Use **descriptive variable names**
+
+### Dependencies
+- **Core**: anyio, click, httpx, mcp, pydantic, pyyaml
+- **Development**: pytest, ruff, pyright, black, mypy
+- **Version Management**: Use `pyproject.toml` for dependency specification
+- **Virtual Environment**: Always use `.venv` for development
+
+## MCP Protocol Standards
+
+### Server Implementation
+- Follow **MCP specification** strictly
+- Implement **proper error handling** for all MCP operations
+- Use **structured logging** for MCP interactions
+- Support both **stdio and SSE** transport modes
+- Provide **comprehensive tool descriptions** and schemas
+
+### Tool Design
+- **Tool Names**: Use descriptive, action-oriented names (e.g., `dev_plan_create`)
+- **Input Validation**: Validate all tool inputs using Pydantic models
+- **Error Responses**: Provide clear, actionable error messages
+- **Progress Reporting**: Use MCP progress notifications for long-running operations
+- **Resource Management**: Properly handle MCP resources and cleanup
+
+## DSL Development Standards
+
+### Language Design
+- **Declarative Syntax**: Use YAML-based declarative syntax
+- **Validation**: Implement multi-layer validation (syntax, logic, context, standards)
+- **Extensibility**: Design for easy template and rule extension
+- **Error Messages**: Provide clear, contextual error messages
+- **Documentation**: Maintain comprehensive DSL documentation
+
+### Template System
+- **Reusable Templates**: Create modular, reusable code generation templates
+- **Parameterization**: Support configurable template parameters
+- **Validation**: Validate template outputs against project standards
+- **Documentation**: Document all available templates and their usage
+
+## Testing Standards
+
+### Test Structure
+- **Unit Tests**: Test individual functions and classes
+- **Integration Tests**: Test MCP server interactions
+- **End-to-End Tests**: Test complete workflows
+- **Mock External Dependencies**: Use mocks for external services
+
+### Test Quality
+- **Descriptive Names**: Use clear, descriptive test function names
+- **Arrange-Act-Assert**: Follow AAA pattern for test structure
+- **Edge Cases**: Test error conditions and edge cases
+- **Coverage**: Maintain >80% test coverage
+
+## Documentation Standards
+
+### Code Documentation
+- **Docstrings**: Use Google or NumPy docstring format
+- **Type Hints**: Include comprehensive type annotations
+- **Examples**: Provide usage examples in docstrings
+- **API Documentation**: Keep API documentation current
+
+### User Documentation
+- **README.md**: Comprehensive project overview
+- **SETUP.md**: Detailed installation and configuration
+- **CONTRIBUTING.md**: Clear contribution guidelines
+- **CHANGELOG.md**: Version history and changes
+- **Inline Comments**: Explain complex logic with comments
+
+## Development Workflow
+
+### Git Practices
+- **Conventional Commits**: Use conventional commit format
+- **Feature Branches**: Create feature branches for new development
+- **Pull Requests**: Require code review for all changes
+- **Clean History**: Maintain clean, linear git history
+
+### Code Review
+- **Automated Checks**: Run tests, linting, and type checking
+- **Manual Review**: Review for logic, security, and maintainability
+- **Documentation**: Ensure documentation is updated
+- **Testing**: Verify all changes are properly tested
+
+## Security & Best Practices
+
+### Security
+- **Input Validation**: Validate all user inputs
+- **Error Handling**: Don't expose sensitive information in errors
+- **Dependencies**: Keep dependencies updated and secure
+- **Access Control**: Implement proper access controls for MCP operations
+
+### Performance
+- **Async Operations**: Use async/await for I/O operations
+- **Resource Management**: Properly manage memory and file handles
+- **Caching**: Implement appropriate caching strategies
+- **Monitoring**: Add performance monitoring where appropriate
+
+## Community Standards
+
+### Open Source
+- **MIT License**: All code is MIT licensed
+- **Contributing Guidelines**: Clear guidelines for contributors
+- **Code of Conduct**: Maintain a welcoming community
+- **Issue Templates**: Use structured issue and PR templates
+
+### Communication
+- **Clear Documentation**: Write clear, accessible documentation
+- **Examples**: Provide practical examples for all features
+- **Error Messages**: Write user-friendly error messages
+- **Logging**: Use appropriate log levels and messages
+
+## AI Assistant Guidelines
+
+### When Working with AI
+- **Context Awareness**: Always consider the MCP server context
+- **Tool Integration**: Leverage MCP tools for development tasks
+- **Validation**: Use the validation framework for code quality
+- **Templates**: Utilize the template system for code generation
+- **State Management**: Use state tracking for development progress
+
+### Code Generation
+- **Follow Standards**: Generate code that follows project standards
+- **Type Safety**: Ensure generated code includes proper type hints
+- **Documentation**: Include docstrings in generated code
+- **Testing**: Suggest tests for generated functionality
+- **Validation**: Validate generated code against project rules
+
+## Project-Specific Rules
+
+### MCP Server Development
+- **Protocol Compliance**: Strictly follow MCP specification
+- **Tool Design**: Design tools for developer productivity
+- **Error Handling**: Provide helpful error messages
+- **Performance**: Optimize for fast response times
+- **Extensibility**: Design for easy extension and customization
+
+### DSL Development
+- **User Experience**: Prioritize developer experience in DSL design
+- **Validation**: Implement comprehensive validation
+- **Templates**: Create useful, reusable templates
+- **Documentation**: Maintain clear DSL documentation
+- **Examples**: Provide practical examples for all features
+
+Remember: This project aims to bring Infrastructure-as-Code principles to software development planning. Every decision should prioritize developer productivity, code quality, and maintainability.

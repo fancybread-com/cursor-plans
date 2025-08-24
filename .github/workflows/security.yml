@@ -1,0 +1,86 @@
+name: Security
+
+on:
+  schedule:
+    # Run security checks weekly
+    - cron: '0 2 * * 1'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run bandit security checks
+      run: |
+        bandit -r src/cursor_plans_mcp/ -f json -o bandit-report.json || true
+        bandit -r src/cursor_plans_mcp/ -f txt -o bandit-report.txt || true
+
+    - name: Run safety checks
+      run: |
+        pip install safety
+        safety check --json --output safety-report.json || true
+        safety check --text --output safety-report.txt || true
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          bandit-report.txt
+          safety-report.json
+          safety-report.txt
+        retention-days: 30
+
+    - name: Comment on PR if vulnerabilities found
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const banditReport = JSON.parse(fs.readFileSync('bandit-report.json', 'utf8'));
+            const safetyReport = JSON.parse(fs.readFileSync('safety-report.json', 'utf8'));
+
+            let comment = '## Security Scan Results\n\n';
+
+            if (banditReport.results && banditReport.results.length > 0) {
+              comment += '### 🔴 Bandit Security Issues Found\n\n';
+              banditReport.results.forEach(issue => {
+                comment += `- **${issue.severity.toUpperCase()}**: ${issue.issue_text} (${issue.filename}:${issue.line_number})\n`;
+              });
+              comment += '\n';
+            }
+
+            if (safetyReport.vulnerabilities && safetyReport.vulnerabilities.length > 0) {
+              comment += '### 🔴 Safety Vulnerabilities Found\n\n';
+              safetyReport.vulnerabilities.forEach(vuln => {
+                comment += `- **${vuln.package}**: ${vuln.description} (${vuln.installed_version})\n`;
+              });
+            }
+
+            if (comment === '## Security Scan Results\n\n') {
+              comment += '✅ No security issues found!';
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('No security reports found or error reading reports');
+          }
