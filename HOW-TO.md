@@ -55,7 +55,6 @@ dev_plan_create name="my-api" template="fastapi"
 - `fastapi` - FastAPI web service with database
 - `dotnet` - .NET 8 Web API with Entity Framework
 - `vuejs` - Vue.js frontend application
-- `from-existing` - Analyze existing codebase
 
 ## **File Organization Best Practices**
 
@@ -88,7 +87,6 @@ your-project/
 | `fastapi` | FastAPI web service with auth | Python APIs, microservices | ✅ Implemented |
 | `dotnet` | .NET 8 Web API with Entity Framework | C# applications, enterprise | ✅ Implemented |
 | `vuejs` | Vue.js frontend with Vite | Frontend applications, SPAs | ⚠️ Referenced |
-| `from-existing` | Analyze existing codebase | Legacy projects, migrations | ✅ Implemented |
 
 ### **Template Features**
 
@@ -132,27 +130,23 @@ dev_plan_create name="my-api-project" template="fastapi"
 dev_plan_create name="web-app" template="vuejs"
 dev_plan_create name="backend-service" template="dotnet"
 dev_plan_create name="simple-project" template="basic"
-dev_plan_create name="existing-project" template="from-existing" analyze_existing=true
+dev_plan_create name="existing-project" template="basic"
 ```
 
 **Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `name` | string | ✅ Yes | - | Name of the development plan (creates `{name}.devplan`) |
-| `template` | string | ❌ No | `basic` | Template to use: `basic`, `fastapi`, `dotnet`, `vuejs`, `from-existing` |
-| `analyze_existing` | boolean | ❌ No | `false` | Analyze existing codebase to create plan (for `from-existing` template) |
+| `template` | string | ❌ No | `basic` | Template to use: `basic`, `fastapi`, `dotnet`, `vuejs` |
 | `context` | string | ❌ No | `""` | Context identifier (story-123, feature-auth, etc.) - creates `context-{name}.txt` |
 
 **Advanced Examples:**
 ```bash
-# Create plan with existing codebase analysis
-dev_plan_create name="legacy-migration" template="from-existing" analyze_existing=true
-
 # Create plan with specific context
 dev_plan_create name="auth-feature" template="fastapi" context="story-456"
 
 # Create plan for existing project with context files
-dev_plan_create name="api-v2" template="dotnet" context="feature-api" analyze_existing=true
+dev_plan_create name="api-v2" template="dotnet" context="feature-api"
 ```
 
 ### **3. Show and Display Plans**
@@ -260,23 +254,43 @@ Always begin new projects by initializing development planning:
 dev_plan_init project_directory="/path/to/your/project"
 ```
 
-### **2. Use Context for Better Planning**
-Specify relevant files to create more accurate and targeted development plans:
+### **2. Working with Existing Codebases**
+For existing projects, manually specify relevant files to create accurate development plans:
 
 #### **Method 1: Default Context**
+Create a `context.txt` file in your project root with relevant file paths:
 ```
-You: "Create a .NET API for user management using my existing context"
+# context.txt
+src/main.py
+src/models.py
+requirements.txt
+README.md
+```
 
-# Cursor uses dev_plan_create (automatically uses context.txt if available)
+Then create a plan:
+```bash
+dev_plan_create name="my-api" template="fastapi"
+# Automatically uses context.txt if available
 ```
 
 #### **Method 2: Story-Specific Context**
-```
-You: "Add my authentication files to context for Story 123"
+Add specific files to context for targeted planning:
+```bash
+# Add authentication files to context
+dev_context_add files["src/auth.py", "src/models.py"] context="story-123"
 
-# Cursor uses dev_context_add with context="story-123"
-# Creates context-story-123.txt
-# Then use dev_plan_create with context="story-123"
+# Create plan using that context
+dev_plan_create name="auth-feature" template="fastapi" context="story-123"
+```
+
+#### **Method 3: Analyze Current State**
+Use the state analysis tools to understand your codebase:
+```bash
+# Show current project structure
+dev_state_show
+
+# List files with context
+dev_context_list include_content=true
 ```
 
 ### **3. Check State Regularly**
@@ -305,12 +319,13 @@ dev_plan_init project_directory="/path/to/your/project" reset=true
 
 ## **Template Implementation Status**
 
-### ✅ Fully Implemented (9 templates)
-- **Python/FastAPI**: `fastapi_main`, `fastapi_model`, `requirements`
-- **.NET**: `dotnet_program`, `dotnet_controller`, `ef_dbcontext`, `dotnet_service`, `dotnet_csproj`
-- **Generic**: `basic`
+### ✅ Fully Implemented (4 templates)
+- **Basic**: `basic` - Simple project structure
+- **FastAPI**: `fastapi` - Python FastAPI web service
+- **.NET**: `dotnet` - .NET 8 Web API
+- **Vue.js**: `vuejs` - Vue.js frontend application
 
-### ⚠️ Referenced (11 templates)
+### ⚠️ Referenced (6 templates)
 - **Python/FastAPI**: `basic_readme`, `python_main`, `sqlalchemy_models`, `jwt_auth`, `fastapi_requirements`
 - **Vue.js**: `vue_main`, `vue_app`, `vue_router`, `pinia_store`, `vue_component`, `vue_package_json`
 

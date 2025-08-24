@@ -61,7 +61,7 @@ class TestDotNetTemplates:
                 "name": "test-dotnet-api",
                 "template": "dotnet",
                 "project_directory": temp_dir,
-                "analyze_existing": False
+
             })
 
             assert len(result) == 1

@@ -102,8 +102,8 @@ class TestNameResolution:
             assert result["suggested_name"] == "TestProject"
 
     @pytest.mark.asyncio
-    async def test_name_override_only_when_analyze_existing_true(self):
-        """Test that name is only overridden when analyze_existing=True."""
+    async def test_name_always_preserved(self):
+        """Test that name is always preserved (no auto-detection)."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a .csproj file
             csproj_file = Path(temp_dir) / "TestProject.csproj"
@@ -116,11 +116,10 @@ class TestNameResolution:
             """)
 
             with patch('cursor_plans_mcp.server._project_context', {}):
-                # Test with analyze_existing=False (should preserve name)
+                # Test that name is always preserved
                 result = await create_dev_plan({
                     "name": "middleware",
                     "template": "dotnet",
-                    "analyze_existing": False,
                     "project_directory": temp_dir
                 })
 
@@ -128,22 +127,6 @@ class TestNameResolution:
                 assert plan_file.exists()
                 content = plan_file.read_text()
                 assert 'name: "middleware"' in content
-
-                # Clean up
-                plan_file.unlink()
-
-                # Test with analyze_existing=True (should override name)
-                result = await create_dev_plan({
-                    "name": "middleware",
-                    "template": "dotnet",
-                    "analyze_existing": True,
-                    "project_directory": temp_dir
-                })
-
-                plan_file = Path(temp_dir) / ".cursorplans" / "TestProject.devplan"
-                assert plan_file.exists()
-                content = plan_file.read_text()
-                assert 'name: "TestProject"' in content
 
     @pytest.mark.asyncio
     async def test_context_aware_project_directory(self):
