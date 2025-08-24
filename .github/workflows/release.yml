@@ -39,7 +39,7 @@ jobs:
         script: |
           const tag = context.ref.replace('refs/tags/', '');
           const releaseName = `Release ${tag}`;
-          
+
           await github.rest.repos.createRelease({
             owner: context.repo.owner,
             repo: context.repo.repo,
