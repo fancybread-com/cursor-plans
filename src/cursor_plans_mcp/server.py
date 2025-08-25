@@ -68,13 +68,8 @@ def main(port: int, transport: str) -> int:
                         },
                         "template": {
                             "type": "string",
-                            "description": "Template to use (basic, fastapi, dotnet, vuejs, from-existing)",
+                            "description": "Template to use (basic, fastapi, dotnet, vuejs)",
                             "default": "basic",
-                        },
-                        "analyze_existing": {
-                            "type": "boolean",
-                            "description": "Analyze existing codebase to create plan",
-                            "default": False,
                         },
                         "context": {
                             "type": "string",
@@ -365,7 +360,6 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
         # Remove .cursorplans directory and all contents
         if cursorplans_dir.exists():
             shutil.rmtree(cursorplans_dir)
-            print(f"DEBUG: Removed .cursorplans directory: {cursorplans_dir}")
 
         # Reset global context
         _project_context = {}
@@ -488,19 +482,12 @@ async def create_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]
 
     name = arguments["name"]
     template = arguments.get("template", "basic")
-    analyze_existing = arguments.get("analyze_existing", False)
     context = arguments.get("context", "")
     project_directory = arguments.get("project_directory", ".")
 
     # Use stored project context if available and no explicit project_directory provided
     if (project_directory == "." or not project_directory) and _project_context:
         project_directory = _project_context["project_directory"]
-        print(f"DEBUG: Using stored project context: {project_directory}")
-    else:
-        print(f"DEBUG: No stored context available, using provided project_directory: {project_directory}")
-        print(f"DEBUG: _project_context: {_project_context}")
-
-    print(f"DEBUG: Final project_directory before resolution: {project_directory}")
 
     # If project_directory is "." or not provided, try to use environment or fallback
     if project_directory == "." or not project_directory:
@@ -518,70 +505,12 @@ async def create_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]
         # Last resort: use home directory as fallback
         import os
         project_directory = os.path.expanduser("~")
-        print(f"WARNING: Using home directory as fallback: {project_directory}")
 
     # Simple context file resolution
     context_files = []
     project_path = Path(project_directory).resolve()
 
-    # Debug: Log the resolved path to help diagnose issues
-    print(f"DEBUG: project_directory = {project_directory}")
-    print(f"DEBUG: project_path = {project_path}")
-    print(f"DEBUG: project_path.exists() = {project_path.exists()}")
-    print(f"DEBUG: project_path.is_dir() = {project_path.is_dir()}")
-
-        # CRITICAL FIX: Detect if we're in the cursor-plans MCP directory and find the actual project
-    import os
-    print(f"DEBUG: Checking if we're in cursor-plans directory...")
-    print(f"DEBUG: project_path = {project_path}")
-    print(f"DEBUG: project_path.name = {project_path.name}")
-    print(f"DEBUG: 'cursor-plans' in str(project_path) = {'cursor-plans' in str(project_path)}")
-
-    if "cursor-plans" in str(project_path) and project_path.name == "cursor-plans":
-        print(f"DEBUG: We're in the cursor-plans MCP directory, looking for actual project...")
-        # We're in the MCP directory, need to find the actual project
-        # Look for common project indicators in parent directories
-        current = project_path.parent
-        print(f"DEBUG: Starting search from parent: {current}")
-
-        while current != current.parent:  # Stop at root
-            print(f"DEBUG: Checking directory: {current}")
-            # Check if this looks like a project directory
-            has_git = (current / ".git").exists()
-            has_package = (current / "package.json").exists()
-            has_pyproject = (current / "pyproject.toml").exists()
-            print(f"DEBUG:   .git exists: {has_git}")
-            print(f"DEBUG:   package.json exists: {has_package}")
-            print(f"DEBUG:   pyproject.toml exists: {has_pyproject}")
-
-            if has_git or has_package or has_pyproject:
-                project_path = current
-                print(f"DEBUG: Found actual project directory: {project_path}")
-                break
-            current = current.parent
-
-        # If we didn't find a project, try to use the parent of cursor-plans
-        if project_path.name == "cursor-plans":
-            project_path = project_path.parent
-            print(f"DEBUG: Using parent directory as project: {project_path}")
-    else:
-        print(f"DEBUG: Not in cursor-plans directory, using current project_path: {project_path}")
-
-    # CRITICAL FIX: Ensure we're not writing to root or home directory
-    if str(project_path) == "/" or str(project_path) == os.path.expanduser("~"):
-        # If we're at root or home, try to find a better project directory
-        # Look for common project indicators
-        import os
-        current_dir = os.getcwd()
-        if current_dir != "/" and current_dir != os.path.expanduser("~"):
-            project_path = Path(current_dir)
-            print(f"DEBUG: Using current working directory instead: {project_path}")
-        else:
-            # Last resort: create in a safe location
-            safe_dir = Path(os.path.expanduser("~/projects"))
-            safe_dir.mkdir(exist_ok=True)
-            project_path = safe_dir
-            print(f"DEBUG: Using safe fallback directory: {project_path}")
+    # Simple context file resolution
 
     if context:
         context_file = project_path / f"context-{context}.txt"
@@ -590,26 +519,7 @@ async def create_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]
     elif (project_path / "context.txt").exists():
         context_files = await load_context_file(str(project_path / "context.txt"))
 
-    # If analyzing existing codebase, detect the framework first
-    print(f"DEBUG: analyze_existing = {analyze_existing}")
-    print(f"DEBUG: template = {template}")
-    print(f"DEBUG: template == 'from-existing' = {template == 'from-existing'}")
-
-    if analyze_existing or template == "from-existing":
-        print(f"DEBUG: Calling detect_existing_codebase...")
-        # Only suggest names when analyze_existing is True
-        suggest_name = analyze_existing
-        detected_info = await detect_existing_codebase(str(project_path), context_files, suggest_name)
-        print(f"DEBUG: detected_info = {detected_info}")
-        if detected_info["framework"]:
-            template = detected_info["framework"]
-            print(f"DEBUG: Overriding template to: {template}")
-            # Only override name if analyze_existing is True (not for template detection)
-            if analyze_existing:
-                name = detected_info["suggested_name"] or name
-                print(f"DEBUG: Overriding name to: {name}")
-            else:
-                print(f"DEBUG: Not overriding name, keeping: {name}")
+    # Simple context file resolution - no automatic detection
 
     # Template structures
     if template == "basic":
@@ -970,13 +880,49 @@ validation:
     - dependency_audit
 """
     else:
-        plan_content = f"""# Development Plan: {name}
+        plan_content = f"""schema_version: "1.0"
+# Development Plan: {name}
 
 project:
   name: "{name}"
   version: "0.1.0"
+  description: "Custom project"
 
-# Add your target state, resources, and phases here
+target_state:
+  architecture:
+    - language: "TBD"
+    - framework: "TBD"
+
+  features:
+    - custom_features
+
+resources:
+  files:
+    - path: "README.md"
+      type: "documentation"
+      template: "basic_readme"
+
+phases:
+  foundation:
+    priority: 1
+    tasks:
+      - setup_project_structure
+      - create_basic_files
+
+  development:
+    priority: 2
+    dependencies: ["foundation"]
+    tasks:
+      - implement_core_features
+      - add_tests
+
+validation:
+  pre_apply:
+    - syntax_check
+    - dependency_check
+
+  post_apply:
+    - unit_test_validation
 """
 
         # Add context information to plan if provided
@@ -1003,16 +949,9 @@ project:
     # Create .cursorplans directory if it doesn't exist
     cursorplans_dir = project_path / ".cursorplans"
 
-    # Debug: Log the directory creation attempt
-    print(f"DEBUG: Creating directory: {cursorplans_dir}")
-    print(f"DEBUG: Directory parent exists: {cursorplans_dir.parent.exists()}")
-    print(f"DEBUG: Directory parent is writable: {os.access(cursorplans_dir.parent, os.W_OK)}")
-
     try:
         cursorplans_dir.mkdir(exist_ok=True)
-        print(f"DEBUG: Directory created/exists: {cursorplans_dir.exists()}")
     except Exception as e:
-        print(f"ERROR: Failed to create directory {cursorplans_dir}: {e}")
         return [
             types.TextContent(
                 type="text",
@@ -1021,10 +960,6 @@ project:
         ]
 
     plan_file = cursorplans_dir / f"{name}.devplan"
-    print(f"DEBUG: Plan file path: {plan_file}")
-    print(f"DEBUG: name parameter: {name}")
-    print(f"DEBUG: project_path: {project_path}")
-    print(f"DEBUG: cursorplans_dir: {cursorplans_dir}")
 
     try:
         with open(plan_file, "w") as f:
@@ -1059,7 +994,6 @@ async def show_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
     # Use stored project context if available and no explicit project_directory provided
     if (project_directory == "." or not project_directory) and _project_context:
         project_directory = _project_context["project_directory"]
-        print(f"DEBUG: Using stored project context for show_dev_plan: {project_directory}")
 
     try:
         project_path = Path(project_directory).resolve()

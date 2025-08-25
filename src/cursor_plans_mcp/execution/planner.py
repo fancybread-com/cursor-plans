@@ -69,6 +69,10 @@ class DependencyResolver:
             priority = phase_data.get("priority", 999)  # Default low priority
             dependencies = phase_data.get("dependencies", [])
 
+            # Ensure priority is an integer
+            if not isinstance(priority, int):
+                priority = 999
+
             # Ensure dependencies is a list
             if not isinstance(dependencies, list):
                 dependencies = []

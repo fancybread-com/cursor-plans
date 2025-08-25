@@ -19,7 +19,6 @@ class TestTemplateGeneration:
         result = await create_dev_plan({
             "name": "basic-project",
             "template": "basic",
-            "analyze_existing": False,
             "context": "",
             "project_directory": str(temp_dir)
         })
@@ -47,7 +46,6 @@ class TestTemplateGeneration:
         result = await create_dev_plan({
             "name": "fastapi-project",
             "template": "fastapi",
-            "analyze_existing": False,
             "context": "",
             "project_directory": str(temp_dir)
         })
@@ -88,7 +86,6 @@ class TestTemplateGeneration:
         result = await create_dev_plan({
             "name": "dotnet-project",
             "template": "dotnet",
-            "analyze_existing": False,
             "context": "",
             "project_directory": str(temp_dir)
         })
@@ -119,7 +116,6 @@ class TestTemplateGeneration:
         result = await create_dev_plan({
             "name": "vue-project",
             "template": "vuejs",
-            "analyze_existing": False,
             "context": "",
             "project_directory": str(temp_dir)
         })
@@ -146,7 +142,8 @@ class TestTemplateGeneration:
 class TestExistingCodebaseDetection:
     """Test existing codebase detection and analysis."""
 
-    def test_detect_fastapi_project(self, temp_dir):
+    @pytest.mark.asyncio
+    async def test_detect_fastapi_project(self, temp_dir):
         """Test detection of FastAPI project."""
         # Create FastAPI project files
         requirements_file = temp_dir / "requirements.txt"
@@ -156,12 +153,13 @@ class TestExistingCodebaseDetection:
         main_file.write_text("from fastapi import FastAPI\n\napp = FastAPI()")
 
         os.chdir(temp_dir)
-        detected = detect_existing_codebase(str(temp_dir))
+        detected = await detect_existing_codebase(str(temp_dir))
 
         assert detected["framework"] == "fastapi"
-        assert detected["language"] == "python"
+        assert detected["language"] == "Python"
 
-    def test_detect_dotnet_project(self, temp_dir):
+    @pytest.mark.asyncio
+    async def test_detect_dotnet_project(self, temp_dir):
         """Test detection of .NET project."""
         # Create .NET project files
         csproj_file = temp_dir / "TestProject.csproj"
@@ -177,12 +175,13 @@ class TestExistingCodebaseDetection:
         program_file.write_text("var app = WebApplication.CreateBuilder(args).Build();")
 
         os.chdir(temp_dir)
-        detected = detect_existing_codebase(str(temp_dir))
+        detected = await detect_existing_codebase(str(temp_dir))
 
         assert detected["framework"] == "dotnet"
-        assert detected["language"] == "csharp"
+        assert detected["language"] == "C#"
 
-    def test_detect_vuejs_project(self, temp_dir):
+    @pytest.mark.asyncio
+    async def test_detect_vuejs_project(self, temp_dir):
         """Test detection of Vue.js project."""
         # Create Vue.js project files
         package_file = temp_dir / "package.json"
@@ -198,19 +197,20 @@ class TestExistingCodebaseDetection:
         main_file.write_text("import { createApp } from 'vue'")
 
         os.chdir(temp_dir)
-        detected = detect_existing_codebase(str(temp_dir))
+        detected = await detect_existing_codebase(str(temp_dir))
 
         assert detected["framework"] == "vuejs"
         assert detected["language"] == "JavaScript/TypeScript"
 
-    def test_detect_unknown_project(self, temp_dir):
+    @pytest.mark.asyncio
+    async def test_detect_unknown_project(self, temp_dir):
         """Test detection of unknown project type."""
         # Create generic files
         readme_file = temp_dir / "README.md"
         readme_file.write_text("# Generic Project")
 
         os.chdir(temp_dir)
-        detected = detect_existing_codebase(str(temp_dir))
+        detected = await detect_existing_codebase(str(temp_dir))
 
         assert detected["framework"] is None
         assert detected["language"] is None
@@ -230,8 +230,7 @@ class TestExistingCodebaseDetection:
 
         result = await create_dev_plan({
             "name": "detected-project",
-            "template": "from-existing",
-            "analyze_existing": True,
+            "template": "fastapi",
             "context": "",
             "project_directory": str(temp_dir)
         })
@@ -258,7 +257,6 @@ class TestContextHandling:
         result = await create_dev_plan({
             "name": "context-project",
             "template": "basic",
-            "analyze_existing": False,
             "context": "",  # Uses default context.txt
             "project_directory": str(temp_dir)
         })
@@ -280,7 +278,6 @@ class TestContextHandling:
         result = await create_dev_plan({
             "name": "story-project",
             "template": "basic",
-            "analyze_existing": False,
             "context": "story-456",
             "project_directory": str(temp_dir)
         })
@@ -291,7 +288,7 @@ class TestContextHandling:
 
         # If context was used, might mention it
         if "context" in result_text.lower():
-            assert "story-456" in result_text or "context" in result_text
+            assert "Context files included" in result_text
 
     def test_load_context_file(self, temp_dir):
         """Test loading context file content."""
@@ -337,7 +334,6 @@ class TestTemplateValidation:
         result = await create_dev_plan({
             "name": "fallback-project",
             "template": "nonexistent-template",
-            "analyze_existing": False,
             "context": "",
             "project_directory": str(temp_dir)
         })
@@ -365,7 +361,6 @@ class TestTemplateValidation:
             result = await create_dev_plan({
                 "name": f"{template}-test",
                 "template": template,
-                "analyze_existing": False,
                 "context": "",
                 "project_directory": str(temp_dir)
             })

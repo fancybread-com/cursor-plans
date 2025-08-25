@@ -107,7 +107,8 @@ class SnapshotManager:
             backup_id = await self.create_snapshot("Auto-backup before restoration")
 
             # Restore files
-            await self._restore_project_files(snapshot_dir, metadata.get("project_files", []))
+            project_files = metadata.get("project_files", [])
+            await self._restore_project_files(snapshot_dir, project_files)
 
             # Update metadata to indicate restoration
             await self._update_snapshot_metadata(snapshot_id, {
@@ -239,17 +240,27 @@ class SnapshotManager:
             elif item.is_dir():
                 shutil.rmtree(item)
 
-        # Restore files from snapshot
-        for file_path in project_files:
+        # Separate files and directories
+        files = [f for f in project_files if not (snapshot_dir / f).is_dir()]
+        directories = [d for d in project_files if (snapshot_dir / d).is_dir()]
+
+        # First restore directories
+        for dir_path in directories:
+            source_path = snapshot_dir / dir_path
+            target_path = self.project_dir / dir_path
+
+            if source_path.exists():
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(source_path, target_path, dirs_exist_ok=True)
+
+        # Then restore individual files
+        for file_path in files:
             source_path = snapshot_dir / file_path
             target_path = self.project_dir / file_path
 
             if source_path.exists():
                 target_path.parent.mkdir(parents=True, exist_ok=True)
-                if source_path.is_file():
-                    shutil.copy2(source_path, target_path)
-                elif source_path.is_dir():
-                    shutil.copytree(source_path, target_path, dirs_exist_ok=True)
+                shutil.copy2(source_path, target_path)
 
     async def _get_project_file_list(self) -> List[str]:
         """Get list of project files (relative paths)."""

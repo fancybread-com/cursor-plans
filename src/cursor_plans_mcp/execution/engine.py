@@ -172,7 +172,7 @@ class PlanExecutor:
                 if "files" in resources:
                     for file_resource in resources["files"]:
                         if isinstance(file_resource, dict) and "path" in file_resource:
-                            changes.append(f"  Would create: {file_resource['path']}")
+                            changes.append(f"Would create: {file_resource['path']}")
 
         return ExecutionResult(
             success=True,

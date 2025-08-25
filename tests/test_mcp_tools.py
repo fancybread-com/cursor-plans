@@ -31,7 +31,6 @@ class TestDevPlanCreate:
         result = await create_dev_plan({
             "name": "test-project",
             "template": "basic",
-            "analyze_existing": False,
             "context": "",
             "project_directory": str(temp_dir)
         })
@@ -60,7 +59,6 @@ class TestDevPlanCreate:
         result = await create_dev_plan({
             "name": "api-project",
             "template": "fastapi",
-            "analyze_existing": False,
             "context": "",
             "project_directory": str(temp_dir)
         })
@@ -91,7 +89,6 @@ class TestDevPlanCreate:
         result = await create_dev_plan({
             "name": "context-project",
             "template": "basic",
-            "analyze_existing": False,
             "context": "",  # Will use default context.txt
             "project_directory": str(temp_dir)
         })
@@ -370,7 +367,6 @@ class TestErrorHandling:
         result = await create_dev_plan({
             "name": "test-project",
             "template": "invalid_template",
-            "analyze_existing": False,
             "context": ""
         })
 
