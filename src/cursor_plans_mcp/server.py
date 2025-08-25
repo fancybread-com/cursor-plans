@@ -1044,11 +1044,66 @@ async def show_current_state(arguments: dict[str, Any]) -> list[types.ContentBlo
                 )
             ]
 
-        # Analyze current state
+        # Analyze current state with strict project boundary enforcement
         files = []
-        for item in current_dir.rglob("*"):
-            if item.is_file() and not str(item).startswith("."):
-                files.append(str(item.relative_to(current_dir)))
+        max_files = 1000  # Limit total files to prevent excessive scanning
+
+        # Get the absolute path of the current directory
+        current_abs = current_dir.resolve()
+
+        # Use a much simpler approach - only scan the immediate directory and known project subdirectories
+        try:
+            # Get immediate files only
+            for item in current_dir.iterdir():
+                if len(files) >= max_files:
+                    break
+
+                if item.is_file() and not str(item).startswith("."):
+                    try:
+                        relative_path = str(item.relative_to(current_dir))
+                        files.append(relative_path)
+                    except (PermissionError, OSError, ValueError):
+                        continue
+
+            # Only scan specific known project directories
+            project_dirs = ["cursor-plans", "src", "tests", "docs", "examples"]
+            for dir_name in project_dirs:
+                if len(files) >= max_files:
+                    break
+
+                project_dir = current_dir / dir_name
+                if project_dir.exists() and project_dir.is_dir():
+                    try:
+                        for item in project_dir.rglob("*"):
+                            if len(files) >= max_files:
+                                break
+
+                            if item.is_file() and not str(item).startswith("."):
+                                try:
+                                    relative_path = str(item.relative_to(current_dir))
+                                    # Skip build and cache directories
+                                    if any(skip_dir in relative_path for skip_dir in [
+                                        "node_modules/", ".git/", "__pycache__/",
+                                        ".pytest_cache/", ".DS_Store", ".Trash"
+                                    ]):
+                                        continue
+                                    files.append(relative_path)
+                                except (PermissionError, OSError, ValueError):
+                                    continue
+                    except (PermissionError, OSError):
+                        continue
+
+        except (PermissionError, OSError) as e:
+            # If we can't scan the directory at all, return a limited analysis
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"⚠️ Limited analysis due to permission restrictions: {str(e)}\n\n"
+                         f"🔍 Current Codebase State for: {directory}\n"
+                         f"📁 **Accessible Files**: Limited\n"
+                         f"💡 **Suggestion**: Run from project directory or check permissions"
+                )
+            ]
 
         # Check for common project files
         project_files = {
@@ -1152,16 +1207,33 @@ async def show_state_diff(arguments: dict[str, Any]) -> list[types.ContentBlock]
                     if path and not path.startswith("#"):
                         planned_files.add(path)
 
-        # Get current files in the project
+        # Get current files in the project (limited scope)
         current_files = set()
-        for item in Path(".").rglob("*"):
+        current_dir = Path(".")
+
+        # Get immediate files only
+        for item in current_dir.iterdir():
             if item.is_file() and not item.name.startswith("."):
-                # Get relative path from current directory
                 try:
-                    relative_path = str(item.relative_to(Path(".")))
+                    relative_path = str(item.relative_to(current_dir))
                     current_files.add(relative_path)
                 except ValueError:
-                    # Skip if not relative to current directory
+                    pass
+
+        # Only scan specific known project directories
+        project_dirs = ["cursor-plans", "src", "tests", "docs", "examples"]
+        for dir_name in project_dirs:
+            project_dir = current_dir / dir_name
+            if project_dir.exists() and project_dir.is_dir():
+                try:
+                    for item in project_dir.rglob("*"):
+                        if item.is_file() and not item.name.startswith("."):
+                            try:
+                                relative_path = str(item.relative_to(current_dir))
+                                current_files.add(relative_path)
+                            except ValueError:
+                                pass
+                except (PermissionError, OSError):
                     pass
 
         # Calculate differences
@@ -1323,12 +1395,33 @@ async def detect_existing_codebase(directory: str, context_files: list[str] = No
                     if context_path.is_file():
                         context_paths.append(context_path)
                     else:
-                        # If it's a directory, add all files in it
-                        context_paths.extend(list(context_path.rglob("*")))
+                        # If it's a directory, add all files in it (limited scope)
+                        try:
+                            for item in context_path.rglob("*"):
+                                if item.is_file():
+                                    context_paths.append(item)
+                        except (PermissionError, OSError):
+                            pass
             files = context_paths
         else:
-            # Check for various framework indicators
-            files = list(current_dir.rglob("*"))
+            # Check for various framework indicators (limited scope)
+            files = []
+            # Get immediate files only
+            for item in current_dir.iterdir():
+                if item.is_file():
+                    files.append(item)
+
+            # Only scan specific known project directories
+            project_dirs = ["cursor-plans", "src", "tests", "docs", "examples"]
+            for dir_name in project_dirs:
+                project_dir = current_dir / dir_name
+                if project_dir.exists() and project_dir.is_dir():
+                    try:
+                        for item in project_dir.rglob("*"):
+                            if item.is_file():
+                                files.append(item)
+                    except (PermissionError, OSError):
+                        pass
 
         file_names = [f.name for f in files if f.is_file()]
 
@@ -1664,6 +1757,27 @@ async def apply_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
             )
         ]
 
+    except PermissionError as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ **Permission Error:** {str(e)}\n\n**Troubleshooting:**\n"
+                     f"• Check if you have write permissions in the current directory\n"
+                     f"• Try running Cursor with elevated permissions if needed\n"
+                     f"• Ensure the target directory is not read-only\n"
+                     f"• Check if any files are locked by other processes"
+            )
+        ]
+    except OSError as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ **OS Error:** {str(e)}\n\n**Troubleshooting:**\n"
+                     f"• Check disk space and file system permissions\n"
+                     f"• Ensure the target path is valid and accessible\n"
+                     f"• Try creating the directory manually first"
+            )
+        ]
     except Exception as e:
         return [
             types.TextContent(

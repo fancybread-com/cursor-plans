@@ -204,7 +204,11 @@ class SnapshotManager:
             ".DS_Store"
         ]
 
-        for item in self.project_dir.rglob("*"):
+        # Use limited scope scanning to avoid system directories
+        project_dirs = ["cursor-plans", "src", "tests", "docs", "examples"]
+
+        # First, get immediate files
+        for item in self.project_dir.iterdir():
             # Skip excluded patterns
             if any(pattern in str(item) for pattern in exclude_patterns):
                 continue
@@ -225,6 +229,35 @@ class SnapshotManager:
             elif item.is_dir():
                 # Create directory
                 target_path.mkdir(parents=True, exist_ok=True)
+
+        # Then scan specific project directories
+        for dir_name in project_dirs:
+            project_subdir = self.project_dir / dir_name
+            if project_subdir.exists() and project_subdir.is_dir():
+                try:
+                    for item in project_subdir.rglob("*"):
+                        # Skip excluded patterns
+                        if any(pattern in str(item) for pattern in exclude_patterns):
+                            continue
+
+                        # Skip the snapshot directory itself
+                        if item.is_relative_to(snapshot_dir):
+                            continue
+
+                        relative_path = item.relative_to(self.project_dir)
+                        target_path = snapshot_dir / relative_path
+
+                        if item.is_file():
+                            # Copy file
+                            target_path.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(item, target_path)
+                            file_count += 1
+                            total_size += item.stat().st_size
+                        elif item.is_dir():
+                            # Create directory
+                            target_path.mkdir(parents=True, exist_ok=True)
+                except (PermissionError, OSError):
+                    continue
 
         return file_count, total_size
 
@@ -277,7 +310,11 @@ class SnapshotManager:
             ".DS_Store"
         ]
 
-        for item in self.project_dir.rglob("*"):
+        # Use limited scope scanning to avoid system directories
+        project_dirs = ["cursor-plans", "src", "tests", "docs", "examples"]
+
+        # First, get immediate files
+        for item in self.project_dir.iterdir():
             # Skip excluded patterns
             if any(pattern in str(item) for pattern in exclude_patterns):
                 continue
@@ -285,6 +322,22 @@ class SnapshotManager:
             if item.is_file() or item.is_dir():
                 relative_path = item.relative_to(self.project_dir)
                 files.append(str(relative_path))
+
+        # Then scan specific project directories
+        for dir_name in project_dirs:
+            project_subdir = self.project_dir / dir_name
+            if project_subdir.exists() and project_subdir.is_dir():
+                try:
+                    for item in project_subdir.rglob("*"):
+                        # Skip excluded patterns
+                        if any(pattern in str(item) for pattern in exclude_patterns):
+                            continue
+
+                        if item.is_file() or item.is_dir():
+                            relative_path = item.relative_to(self.project_dir)
+                            files.append(str(relative_path))
+                except (PermissionError, OSError):
+                    continue
 
         return files
 
