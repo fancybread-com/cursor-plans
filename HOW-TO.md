@@ -344,6 +344,13 @@ dev_plan_init project_directory="/path/to/your/project" reset=true
 - Use absolute paths if needed
 - Check file permissions
 
+### **Permission Errors**
+- **File Creation Issues**: Ensure you have write permissions in the current directory
+- **Directory Creation**: Check if the target directory is read-only or locked
+- **Elevated Permissions**: Try running Cursor with elevated permissions if needed
+- **Disk Space**: Verify you have sufficient disk space for file operations
+- **File Locks**: Ensure files aren't locked by other processes
+
 ### **State Analysis Issues**
 - Run from your project root directory
 - Ensure you have read permissions

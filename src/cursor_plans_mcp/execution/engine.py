@@ -278,28 +278,56 @@ class PlanExecutor:
                 file_type = file_resource.get("type", "file")
                 template = file_resource.get("template", "basic")
 
-                # Create the file
-                created = await self._create_file(file_path, file_type, template)
-                if created:
-                    changes.append(f"Created: {file_path}")
+                try:
+                    # Create the file
+                    created = await self._create_file(file_path, file_type, template)
+                    if created:
+                        changes.append(f"Created: {file_path}")
+                except PermissionError as e:
+                    changes.append(f"❌ Permission denied: {file_path} - {e}")
+                    raise  # Re-raise to stop execution
+                except OSError as e:
+                    changes.append(f"❌ OS Error: {file_path} - {e}")
+                    raise  # Re-raise to stop execution
+                except Exception as e:
+                    changes.append(f"❌ Error creating {file_path}: {e}")
+                    raise  # Re-raise to stop execution
 
         return changes
 
     async def _create_file(self, file_path: str, file_type: str, template: str) -> bool:
         """Create a single file based on template."""
-        full_path = self.project_dir / file_path
+        try:
+            full_path = self.project_dir / file_path
 
-        # Ensure directory exists
-        full_path.parent.mkdir(parents=True, exist_ok=True)
+            # Ensure directory exists
+            try:
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+            except PermissionError as e:
+                raise PermissionError(f"Cannot create directory {full_path.parent}: {e}")
+            except OSError as e:
+                raise OSError(f"Failed to create directory {full_path.parent}: {e}")
 
-        # Generate content based on template
-        content = self._generate_file_content(file_path, file_type, template)
+            # Generate content based on template
+            content = self._generate_file_content(file_path, file_type, template)
 
-        # Write file
-        with open(full_path, 'w') as f:
-            f.write(content)
+            # Write file with proper error handling
+            try:
+                with open(full_path, 'w') as f:
+                    f.write(content)
+            except PermissionError as e:
+                raise PermissionError(f"Cannot write to file {full_path}: {e}")
+            except OSError as e:
+                raise OSError(f"Failed to write file {full_path}: {e}")
 
-        return True
+            return True
+
+        except (PermissionError, OSError) as e:
+            # Re-raise with more context
+            raise type(e)(f"File creation failed for {file_path}: {e}")
+        except Exception as e:
+            # Catch any other unexpected errors
+            raise Exception(f"Unexpected error creating file {file_path}: {e}")
 
     def _generate_file_content(self, file_path: str, file_type: str, template: str) -> str:
         """Generate file content based on template and type."""
