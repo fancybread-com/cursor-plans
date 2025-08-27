@@ -450,7 +450,12 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
         for pattern in patterns:
             try:
                 # Handle glob patterns
-                matches = list(project_path.glob(pattern))
+                if pattern.endswith('/'):
+                    # For directory patterns, search recursively for files
+                    matches = list(project_path.glob(pattern + "**/*"))
+                else:
+                    matches = list(project_path.glob(pattern))
+
                 for match in matches:
                     if match.is_file():
                         rel_path = str(match.relative_to(project_path))

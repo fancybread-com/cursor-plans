@@ -7,6 +7,7 @@ import tempfile
 import os
 from pathlib import Path
 from typing import Dict, Any
+from unittest.mock import patch
 
 
 @pytest.fixture
@@ -183,3 +184,10 @@ def mock_existing_files(temp_dir):
         created_files.append(full_path)
 
     return created_files
+
+
+@pytest.fixture(autouse=True)
+def reset_project_context():
+    """Reset the global project context before each test."""
+    with patch('cursor_plans_mcp.server._project_context', {}):
+        yield

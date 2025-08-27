@@ -1,7 +1,7 @@
 """Schema validation for development plan files."""
 
 from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 import yaml
 
 
@@ -79,7 +79,8 @@ class DevelopmentPlan(BaseModel):
     validation: Validation = Field(..., description="Validation rules")
     constraints: Optional[List[Constraint]] = Field(default_factory=list)
 
-    @validator('phases')
+    @field_validator('phases')
+    @classmethod
     def validate_phases(cls, v):
         """Ensure required phases exist."""
         required_phases = ['testing']
@@ -88,7 +89,8 @@ class DevelopmentPlan(BaseModel):
             raise ValueError(f"Missing required phases: {missing_phases}")
         return v
 
-    @validator('resources')
+    @field_validator('resources')
+    @classmethod
     def validate_resources(cls, v):
         """Validate resource templates."""
                 # Actually implemented templates
