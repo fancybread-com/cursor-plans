@@ -24,34 +24,35 @@ class TestTemplateImplementation:
         ]
 
         # Get the actual templates from the execution engine
-        executor = PlanExecutor()
-        # Call the method with a dummy template to get the templates dict
-        content = executor._generate_file_content("test.py", "test", "fastapi_main")
-        # We need to inspect the method to get the templates
-        import inspect
-        source = inspect.getsource(executor._generate_file_content)
-        # Extract template names from the source code
-        actual_templates = []
-        if "fastapi_main" in source:
-            actual_templates.append("fastapi_main")
-        if "fastapi_model" in source:
-            actual_templates.append("fastapi_model")
-        if "requirements" in source:
-            actual_templates.append("requirements")
-        if "basic" in source:
-            actual_templates.append("basic")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            executor = PlanExecutor(temp_dir)
+            # Call the method with a dummy template to get the templates dict
+            content = executor._generate_file_content("test.py", "test", "fastapi_main")
+            # We need to inspect the method to get the templates
+            import inspect
+            source = inspect.getsource(executor._generate_file_content)
+            # Extract template names from the source code
+            actual_templates = []
+            if "fastapi_main" in source:
+                actual_templates.append("fastapi_main")
+            if "fastapi_model" in source:
+                actual_templates.append("fastapi_model")
+            if "requirements" in source:
+                actual_templates.append("requirements")
+            if "basic" in source:
+                actual_templates.append("basic")
 
-        # Check which templates are missing
-        missing_templates = [t for t in expected_templates if t not in actual_templates]
+            # Check which templates are missing
+            missing_templates = [t for t in expected_templates if t not in actual_templates]
 
-        if missing_templates:
-            pytest.fail(f"Missing template implementations: {missing_templates}")
+            if missing_templates:
+                pytest.fail(f"Missing template implementations: {missing_templates}")
 
-        # Check for extra templates that aren't in the schema
-        extra_templates = [t for t in actual_templates if t not in expected_templates and not t.startswith('custom_')]
+            # Check for extra templates that aren't in the schema
+            extra_templates = [t for t in actual_templates if t not in expected_templates and not t.startswith('custom_')]
 
-        if extra_templates:
-            print(f"Warning: Extra templates found that aren't in schema: {extra_templates}")
+            if extra_templates:
+                print(f"Warning: Extra templates found that aren't in schema: {extra_templates}")
 
     @pytest.mark.asyncio
     async def test_basic_template_creation(self):
@@ -102,34 +103,36 @@ class TestTemplateImplementation:
     @pytest.mark.skip(reason="Template content generation feature not fully implemented")
     def test_template_content_generation(self):
         """Test that template content can be generated for all expected templates."""
-        executor = PlanExecutor()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            executor = PlanExecutor(temp_dir)
 
-        # Test a few key templates
-        test_templates = [
-            ("fastapi_main", "main.py", "entry_point"),
-            ("basic", "README.md", "documentation"),
-            ("requirements", "requirements.txt", "dependencies")
-        ]
+            # Test a few key templates
+            test_templates = [
+                ("fastapi_main", "main.py", "entry_point"),
+                ("basic", "README.md", "documentation"),
+                ("requirements", "requirements.txt", "dependencies")
+            ]
 
-        for template, file_path, file_type in test_templates:
-            try:
-                content = executor._generate_file_content(file_path, file_type, template)
-                assert content is not None
-                assert len(content) > 0
-                print(f"✅ Template '{template}' generates content ({len(content)} chars)")
-            except Exception as e:
-                pytest.fail(f"Template '{template}' failed to generate content: {e}")
+            for template, file_path, file_type in test_templates:
+                try:
+                    content = executor._generate_file_content(file_path, file_type, template)
+                    assert content is not None
+                    assert len(content) > 0
+                    print(f"✅ Template '{template}' generates content ({len(content)} chars)")
+                except Exception as e:
+                    pytest.fail(f"Template '{template}' failed to generate content: {e}")
 
     @pytest.mark.skip(reason="Template handling feature not fully implemented")
     @pytest.mark.asyncio
     async def test_missing_template_handling(self):
         """Test that missing templates are handled gracefully."""
-        executor = PlanExecutor()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            executor = PlanExecutor(temp_dir)
 
-        # Test with a template that doesn't exist
-        content = executor._generate_file_content("test.py", "test", "nonexistent_template")
+            # Test with a template that doesn't exist
+            content = executor._generate_file_content("test.py", "test", "nonexistent_template")
 
-        # Should fall back to basic template
-        assert content is not None
-        assert len(content) > 0
-        assert "TODO: Implement" in content
+            # Should fall back to basic template
+            assert content is not None
+            assert len(content) > 0
+            assert "TODO: Implement" in content
