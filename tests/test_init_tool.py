@@ -2,6 +2,7 @@
 
 import pytest
 import tempfile
+import yaml
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import os
@@ -12,21 +13,50 @@ from cursor_plans_mcp.server import init_dev_planning
 class TestDevPlanInit:
     """Test the dev_plan_init MCP tool."""
 
+    def create_sample_context_file(self, temp_dir: str, project_name: str = "test-project") -> str:
+        """Helper to create a sample context YAML file."""
+        context_content = {
+            'project': {
+                'directory': temp_dir,
+                'name': project_name,
+                'type': 'python',
+                'description': 'Test project',
+                'objectives': ['Build a test application'],
+                'architecture_notes': ['Use clean architecture']
+            },
+            'context_files': {
+                'source': ['src/', '*.py'],
+                'docs': ['README.md'],
+                'config': ['pyproject.toml']
+            }
+        }
+
+        context_path = Path(temp_dir) / "test.context.yaml"
+        with open(context_path, 'w') as f:
+            yaml.dump(context_content, f)
+
+        return str(context_path)
+
     @pytest.mark.asyncio
     async def test_init_dev_planning_basic(self):
-        """Test basic initialization of development planning."""
+        """Test basic initialization of development planning with YAML context."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a simple project structure
             (Path(temp_dir) / "src").mkdir()
             (Path(temp_dir) / "src" / "main.py").write_text("print('Hello')")
+            (Path(temp_dir) / "README.md").write_text("# Test Project")
+
+            # Create context file
+            context_file = self.create_sample_context_file(temp_dir)
 
             result = await init_dev_planning({
-                "project_directory": temp_dir,
+                "context": context_file,
                 "reset": False
             })
 
             assert len(result) == 1
             assert "Development Planning Initialized" in result[0].text
+            assert "test-project" in result[0].text
             assert temp_dir in result[0].text
 
             # Check that .cursorplans directory was created
@@ -42,10 +72,13 @@ class TestDevPlanInit:
             cursorplans_dir = Path(temp_dir) / ".cursorplans"
             cursorplans_dir.mkdir()
             (cursorplans_dir / "existing.devplan").write_text("old content")
-            (cursorplans_dir / "context.txt").write_text("old context")
+            (cursorplans_dir / "old.yaml").write_text("old context")
+
+            # Create context file
+            context_file = self.create_sample_context_file(temp_dir)
 
             result = await init_dev_planning({
-                "project_directory": temp_dir,
+                "context": context_file,
                 "reset": True
             })
 
@@ -56,152 +89,160 @@ class TestDevPlanInit:
             # Check that .cursorplans directory still exists but old files are gone
             assert cursorplans_dir.exists()
             assert not (cursorplans_dir / "existing.devplan").exists()
-            assert not (cursorplans_dir / "context.txt").exists()
+            assert not (cursorplans_dir / "old.yaml").exists()
 
     @pytest.mark.asyncio
-    async def test_init_dev_planning_detects_python_project(self):
-        """Test that initialization detects Python project correctly."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create Python project files
-            (Path(temp_dir) / "requirements.txt").write_text("fastapi\nuvicorn")
-            (Path(temp_dir) / "src").mkdir()
-            (Path(temp_dir) / "src" / "main.py").write_text("from fastapi import FastAPI")
-
-            result = await init_dev_planning({
-                "project_directory": temp_dir,
-                "reset": False
-            })
-
-            assert len(result) == 1
-            assert "Python" in result[0].text or "FastAPI" in result[0].text or "Development Planning Initialized" in result[0].text
-
-    @pytest.mark.asyncio
-    async def test_init_dev_planning_detects_dotnet_project(self):
-        """Test that initialization detects .NET project correctly."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create .NET project files
-            (Path(temp_dir) / "TestProject.csproj").write_text("""
-<Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-  </PropertyGroup>
-</Project>
-            """)
-
-            result = await init_dev_planning({
-                "project_directory": temp_dir,
-                "reset": False
-            })
-
-            assert len(result) == 1
-            assert ".NET" in result[0].text or "C#" in result[0].text or "Development Planning Initialized" in result[0].text
-
-    @pytest.mark.asyncio
-    async def test_init_dev_planning_detects_vuejs_project(self):
-        """Test that initialization detects Vue.js project correctly."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create Vue.js project files
-            (Path(temp_dir) / "package.json").write_text('{"name": "vue-project", "dependencies": {"vue": "^3.0.0"}}')
-
-            result = await init_dev_planning({
-                "project_directory": temp_dir,
-                "reset": False
-            })
-
-            assert len(result) == 1
-            assert "Vue" in result[0].text or "JavaScript" in result[0].text or "Development Planning Initialized" in result[0].text
-
-    @pytest.mark.asyncio
-    async def test_init_dev_planning_without_project_directory(self):
-        """Test initialization without providing project_directory."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Change to temp directory and set PWD environment variable
-            try:
-                original_cwd = os.getcwd()
-            except FileNotFoundError:
-                original_cwd = "/tmp"  # Fallback directory
-            original_pwd = os.environ.get("PWD")
-            os.chdir(temp_dir)
-            os.environ["PWD"] = temp_dir
-
-            try:
-                result = await init_dev_planning({
-                    "reset": False
-                })
-
-                assert len(result) == 1
-                assert "Development Planning Initialized" in result[0].text
-
-                # Check that .cursorplans directory was created in current directory
-                cursorplans_dir = Path(".").resolve() / ".cursorplans"
-                assert cursorplans_dir.exists()
-            finally:
-                os.chdir(original_cwd)
-                if original_pwd:
-                    os.environ["PWD"] = original_pwd
-                elif "PWD" in os.environ:
-                    del os.environ["PWD"]
-
-    @pytest.mark.asyncio
-    async def test_init_dev_planning_context_storage(self):
-        """Test that initialization stores context correctly."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Create a project structure
-            (Path(temp_dir) / "src").mkdir()
-            (Path(temp_dir) / "src" / "main.py").write_text("print('Hello')")
-
-            result = await init_dev_planning({
-                "project_directory": temp_dir,
-                "reset": False
-            })
-
-            assert len(result) == 1
-
-            # The context should be stored in the global _project_context
-            # We can't directly test this from outside, but we can verify
-            # that subsequent calls work correctly
-            result2 = await init_dev_planning({
-                "project_directory": temp_dir,
-                "reset": False
-            })
-
-            assert len(result2) == 1
-            assert "Development Planning Initialized" in result2[0].text
-
-    @pytest.mark.asyncio
-    async def test_init_dev_planning_error_handling(self):
-        """Test error handling in initialization."""
-        # Test with non-existent directory
+    async def test_init_dev_planning_missing_context_file(self):
+        """Test error handling when context file is missing."""
         result = await init_dev_planning({
-            "project_directory": "/non/existent/path",
+            "context": "/non/existent/context.yaml",
             "reset": False
         })
 
         assert len(result) == 1
-        assert "error" in result[0].text.lower() or "not found" in result[0].text.lower()
+        assert "Error" in result[0].text
+        assert "Context file not found" in result[0].text
 
     @pytest.mark.asyncio
-    async def test_init_dev_planning_creates_cursorplans_directory(self):
-        """Test that initialization creates the .cursorplans directory."""
+    async def test_init_dev_planning_no_context_parameter(self):
+        """Test error handling when no context parameter is provided."""
+        result = await init_dev_planning({
+            "reset": False
+        })
+
+        assert len(result) == 1
+        assert "Error" in result[0].text
+        assert "Context file path is required" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_init_dev_planning_invalid_yaml(self):
+        """Test error handling with invalid YAML content."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create a project structure
-            (Path(temp_dir) / "src").mkdir()
-            (Path(temp_dir) / "src" / "main.py").write_text("print('Hello')")
-            (Path(temp_dir) / "src" / "models.py").write_text("class Model: pass")
-            (Path(temp_dir) / "tests").mkdir()
-            (Path(temp_dir) / "tests" / "test_main.py").write_text("def test_main(): pass")
+            # Create invalid YAML file
+            context_path = Path(temp_dir) / "invalid.context.yaml"
+            context_path.write_text("invalid: yaml: content: [")
 
             result = await init_dev_planning({
-                "project_directory": temp_dir,
+                "context": str(context_path),
                 "reset": False
             })
 
             assert len(result) == 1
+            assert "Error" in result[0].text
+            assert "Invalid YAML" in result[0].text
 
-            # Check that .cursorplans directory was created
-            cursorplans_dir = Path(temp_dir) / ".cursorplans"
-            assert cursorplans_dir.exists()
-            assert cursorplans_dir.is_dir()
+    @pytest.mark.asyncio
+    async def test_init_dev_planning_missing_project_section(self):
+        """Test error handling when YAML is missing project section."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create YAML without project section
+            context_path = Path(temp_dir) / "incomplete.context.yaml"
+            context_path.write_text("context_files:\n  source: ['*.py']")
 
-            # Check that the directory is empty (context files are created separately)
-            assert len(list(cursorplans_dir.iterdir())) == 0
+            result = await init_dev_planning({
+                "context": str(context_path),
+                "reset": False
+            })
+
+            assert len(result) == 1
+            assert "Error" in result[0].text
+            assert "Missing 'project' section" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_init_dev_planning_context_file_scanning(self):
+        """Test that initialization scans and finds context files correctly."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create a comprehensive project structure
+            (Path(temp_dir) / "src").mkdir()
+            (Path(temp_dir) / "src" / "main.py").write_text("from fastapi import FastAPI")
+            (Path(temp_dir) / "src" / "models.py").write_text("class User: pass")
+            (Path(temp_dir) / "README.md").write_text("# Test Project")
+            (Path(temp_dir) / "pyproject.toml").write_text("[project]\nname = 'test'")
+
+            # Create context file
+            context_file = self.create_sample_context_file(temp_dir, "test-scanning")
+
+            result = await init_dev_planning({
+                "context": context_file,
+                "reset": False
+            })
+
+            assert len(result) == 1
+            assert "Development Planning Initialized" in result[0].text
+            assert "Context Files Found" in result[0].text
+            assert "source: src/main.py" in result[0].text
+            assert "docs: README.md" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_init_dev_planning_with_objectives_and_architecture(self):
+        """Test that objectives and architecture notes are displayed correctly."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create enhanced context file with objectives and architecture
+            context_content = {
+                'project': {
+                    'directory': temp_dir,
+                    'name': 'feature-rich-project',
+                    'type': 'fastapi',
+                    'description': 'A comprehensive test project',
+                    'objectives': [
+                        'Build scalable API',
+                        'Implement authentication',
+                        'Add comprehensive testing'
+                    ],
+                    'architecture_notes': [
+                        'Use repository pattern',
+                        'Implement dependency injection',
+                        'Follow clean architecture principles'
+                    ]
+                },
+                'context_files': {
+                    'source': ['src/'],
+                    'docs': ['README.md'],
+                    'config': ['requirements.txt']
+                }
+            }
+
+            context_path = Path(temp_dir) / "enhanced.context.yaml"
+            with open(context_path, 'w') as f:
+                yaml.dump(context_content, f)
+
+            result = await init_dev_planning({
+                "context": str(context_path),
+                "reset": False
+            })
+
+            assert len(result) == 1
+            result_text = result[0].text
+            assert "Development Planning Initialized" in result_text
+            assert "Project Objectives" in result_text
+            assert "Build scalable API" in result_text
+            assert "Architecture Notes" in result_text
+            assert "Use repository pattern" in result_text
+            assert "feature-rich-project" in result_text
+
+    @pytest.mark.asyncio
+    async def test_init_dev_planning_nonexistent_project_directory(self):
+        """Test error handling when project directory doesn't exist."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create context file pointing to non-existent directory
+            context_content = {
+                'project': {
+                    'directory': '/non/existent/path',
+                    'name': 'test-project',
+                    'type': 'python'
+                },
+                'context_files': {'source': ['*.py']}
+            }
+
+            context_path = Path(temp_dir) / "bad.context.yaml"
+            with open(context_path, 'w') as f:
+                yaml.dump(context_content, f)
+
+            result = await init_dev_planning({
+                "context": str(context_path),
+                "reset": False
+            })
+
+            assert len(result) == 1
+            assert "Error" in result[0].text
+            assert "Project directory does not exist" in result[0].text

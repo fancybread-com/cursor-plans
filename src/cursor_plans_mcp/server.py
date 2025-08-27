@@ -37,14 +37,13 @@ def main(port: int, transport: str) -> int:
             types.Tool(
                 name="dev_plan_init",
                 title="Initialize Development Planning",
-                description="Initialize development planning for a project with proper directory setup",
+                description="Initialize development planning for a project using a YAML context file",
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "project_directory": {
+                        "context": {
                             "type": "string",
-                            "description": "Project directory to initialize (default: current working directory)",
-                            "default": ".",
+                            "description": "Path to YAML context file containing project configuration and file patterns",
                         },
                         "reset": {
                             "type": "boolean",
@@ -52,6 +51,7 @@ def main(port: int, transport: str) -> int:
                             "default": False,
                         },
                     },
+                    "required": ["context"],
                 },
             ),
             types.Tool(
@@ -325,14 +325,69 @@ def main(port: int, transport: str) -> int:
 
 
 async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Initialize development planning for a project with proper directory setup."""
+    """Initialize development planning for a project using a YAML context file."""
     import os
     import shutil
     from pathlib import Path
+    import yaml
     global _project_context
 
-    project_directory = arguments.get("project_directory", ".")
+    context_file = arguments.get("context")
     reset = arguments.get("reset", False)
+
+    if not context_file:
+        return [
+            types.TextContent(
+                type="text",
+                text="❌ **Error**: Context file path is required.\n\nUsage: dev_plan_init context=\"sample.context.yaml\""
+            )
+        ]
+
+    # Load and parse the context file
+    try:
+        context_path = Path(context_file)
+        if not context_path.exists():
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"❌ **Error**: Context file not found: {context_file}"
+                )
+            ]
+
+        with open(context_path, 'r') as f:
+            context_config = yaml.safe_load(f)
+
+        if not context_config or 'project' not in context_config:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=f"❌ **Error**: Invalid context file format. Missing 'project' section in {context_file}"
+                )
+            ]
+
+    except yaml.YAMLError as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ **Error**: Invalid YAML in context file: {str(e)}"
+            )
+        ]
+    except Exception as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"❌ **Error**: Could not read context file: {str(e)}"
+            )
+        ]
+
+    # Extract project configuration
+    project_config = context_config['project']
+    project_directory = project_config.get('directory', '.')
+    project_name = project_config.get('name', 'unknown')
+    project_type = project_config.get('type', 'unknown')
+    project_description = project_config.get('description', '')
+    project_objectives = project_config.get('objectives', [])
+    architecture_notes = project_config.get('architecture_notes', [])
 
     # Resolve the project directory
     if project_directory == "." or not project_directory:
@@ -352,9 +407,7 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
         if cursorplans_dir.exists():
             for file in cursorplans_dir.glob("*.devplan"):
                 context_files.append(str(file))
-            for file in cursorplans_dir.glob("context*.txt"):
-                context_files.append(str(file))
-            for file in cursorplans_dir.glob("*.json"):
+            for file in cursorplans_dir.glob("*.yaml"):
                 context_files.append(str(file))
 
         # Remove .cursorplans directory and all contents
@@ -375,18 +428,10 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
 
 ✅ **Ready to start over!**
 
-**Purged Files:**
-{chr(10).join(f"  - {f}" for f in context_files) if context_files else "  - No files found"}
-
 **Next Steps:**
-1. Create a new plan:
+1. Create a new context file and run init again:
    ```bash
-   dev_plan_create name="my-feature" template="basic"
-   ```
-
-2. Add context files:
-   ```bash
-   dev_context_add files["path/to/relevant/files"]
+   dev_plan_init context="my-project.context.yaml"
    ```
 """
         return [
@@ -396,11 +441,35 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
             )
         ]
 
-    # Store project context in global state
+    # Scan for context files based on the YAML configuration
+    context_files = context_config.get('context_files', {})
+    scanned_files = []
+
+    # Process each category of context files
+    for category, patterns in context_files.items():
+        for pattern in patterns:
+            try:
+                # Handle glob patterns
+                matches = list(project_path.glob(pattern))
+                for match in matches:
+                    if match.is_file():
+                        rel_path = str(match.relative_to(project_path))
+                        scanned_files.append(f"{category}: {rel_path}")
+            except Exception:
+                # Skip invalid patterns
+                continue
+
+    # Store enhanced project context in global state
     _project_context = {
         "project_directory": str(project_path),
-        "project_name": project_path.name,
-        "cursorplans_dir": str(project_path / ".cursorplans")
+        "project_name": project_name,
+        "project_type": project_type,
+        "project_description": project_description,
+        "objectives": project_objectives,
+        "architecture_notes": architecture_notes,
+        "context_files": scanned_files,
+        "cursorplans_dir": str(project_path / ".cursorplans"),
+        "context_config_path": str(context_path.resolve())
     }
 
     # Create .cursorplans directory
@@ -415,37 +484,36 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
             )
         ]
 
-    # Detect project type and provide initialization output
-    project_type = "unknown"
-    project_name = project_path.name
+    # Generate comprehensive initialization output
+    objectives_text = ""
+    if project_objectives:
+        objectives_text = f"""
+🎯 **Project Objectives**:
+{chr(10).join(f"  • {obj}" for obj in project_objectives)}"""
 
-    # Check for common project indicators
-    if (project_path / "package.json").exists():
-        project_type = "Node.js"
-    elif (project_path / "pyproject.toml").exists():
-        project_type = "Python"
-    elif (project_path / "Cargo.toml").exists():
-        project_type = "Rust"
-    elif (project_path / "go.mod").exists():
-        project_type = "Go"
-    elif (project_path / ".csproj").exists() or (project_path / "*.sln").exists():
-        project_type = ".NET"
-    elif (project_path / "pom.xml").exists():
-        project_type = "Java/Maven"
-    elif (project_path / "build.gradle").exists():
-        project_type = "Java/Gradle"
+    architecture_text = ""
+    if architecture_notes:
+        architecture_text = f"""
+🏗️ **Architecture Notes**:
+{chr(10).join(f"  • {note}" for note in architecture_notes)}"""
 
-    # Generate initialization output with clear project_directory
+    context_text = ""
+    if scanned_files:
+        context_text = f"""
+📁 **Context Files Found**: {len(scanned_files)} files
+{chr(10).join(f"  • {f}" for f in scanned_files[:10])}
+{"  • ..." if len(scanned_files) > 10 else ""}"""
+
     init_output = f"""🚀 **Development Planning Initialized**
 
 📁 **Project Directory**: `{project_path}`
 🏷️ **Project Name**: `{project_name}`
 🔧 **Project Type**: `{project_type}`
+📋 **Description**: {project_description}
 📂 **Plans Directory**: `{cursorplans_dir}`
+🔗 **Context File**: `{context_file}`{objectives_text}{architecture_text}{context_text}
 
 ✅ **Ready to create development plans!**
-
-**🎉 Project context stored!** You can now use simplified commands without repeating the project directory.
 
 **Next Steps:**
 1. Create your first plan:
@@ -453,19 +521,15 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
    dev_plan_create name="my-feature" template="basic"
    ```
 
-2. For {project_type} projects, consider these templates:
-   - `basic` - Simple project structure
-   - `from-existing` - Analyze existing codebase
-   - `fastapi` - Python FastAPI projects
-   - `dotnet` - .NET projects
-   - `vuejs` - Vue.js frontend projects
-
-3. Validate your plan:
+2. Validate your plan:
    ```bash
    dev_plan_validate plan_file="my-feature.devplan"
    ```
 
-**💡 Tip**: The project directory is now remembered from initialization. You only need to specify it again if you want to work with a different project.
+3. Apply your plan:
+   ```bash
+   dev_apply_plan plan_file="my-feature.devplan" dry_run=true
+   ```
 """
 
     return [
@@ -477,7 +541,7 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
 
 
 async def create_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Create a new development plan file."""
+    """Create a new development plan file using stored context information."""
     global _project_context
 
     name = arguments["name"]
@@ -485,56 +549,49 @@ async def create_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]
     context = arguments.get("context", "")
     project_directory = arguments.get("project_directory", ".")
 
-    # Use stored project context if available and no explicit project_directory provided
-    if (project_directory == "." or not project_directory) and _project_context:
-        project_directory = _project_context["project_directory"]
+    # Use stored project context if available
+    if _project_context:
+        project_directory = _project_context.get("project_directory", project_directory)
+        project_name = _project_context.get("project_name", name)
+        project_type = _project_context.get("project_type", "unknown")
+        project_description = _project_context.get("project_description", "A software project")
+        objectives = _project_context.get("objectives", [])
+        architecture_notes = _project_context.get("architecture_notes", [])
+        context_files = _project_context.get("context_files", [])
+    else:
+        # Fallback when no context is available
+        project_name = name
+        project_type = "unknown"
+        project_description = "A new software project"
+        objectives = []
+        architecture_notes = []
+        context_files = []
 
-    # If project_directory is "." or not provided, try to use environment or fallback
+    # Resolve project directory fallback
     if project_directory == "." or not project_directory:
-        # Try to get the project directory from environment variables
         import os
-        # PWD is often set by the shell
         if "PWD" in os.environ:
             project_directory = os.environ["PWD"]
         else:
-            # Fallback to current working directory
             project_directory = os.getcwd()
 
-    # Ensure we have a valid project directory
-    if not project_directory or project_directory == "/":
-        # Last resort: use home directory as fallback
-        import os
-        project_directory = os.path.expanduser("~")
-
-    # Simple context file resolution
-    context_files = []
     project_path = Path(project_directory).resolve()
 
-    # Simple context file resolution
-
-    if context:
-        context_file = project_path / f"context-{context}.txt"
-        if context_file.exists():
-            context_files = await load_context_file(str(context_file))
-    elif (project_path / "context.txt").exists():
-        context_files = await load_context_file(str(project_path / "context.txt"))
-
-    # Simple context file resolution - no automatic detection
-
-    # Template structures
-    if template == "basic":
-        plan_content = f"""schema_version: "1.0"
+    # Two-pass approach: Generate base plan, then apply context
+    def generate_base_plan(name, project_type, project_description):
+        """Pass 1: Generate base plan structure"""
+        return f"""schema_version: "1.0"
 # Development Plan: {name}
 
 project:
   name: "{name}"
   version: "0.1.0"
-  description: "A new software project"
+  description: "{project_description}"
 
 target_state:
   architecture:
-    - language: "python"
-    - framework: "TBD"
+    - language: "{project_type}"
+    - project_type: "{project_type}"
 
   features:
     - basic_structure
@@ -545,9 +602,6 @@ resources:
     - path: "README.md"
       type: "documentation"
       template: "basic_readme"
-    - path: "src/main.py"
-      type: "entry_point"
-      template: "python_main"
 
   dependencies:
     - "requests"
@@ -566,15 +620,8 @@ phases:
       - implement_core_features
       - add_tests
 
-  documentation:
-    priority: 3
-    dependencies: ["development"]
-    tasks:
-      - write_documentation
-      - create_examples
-
   testing:
-    priority: 4
+    priority: 3
     dependencies: ["development"]
     tasks:
       - unit_tests
@@ -583,11 +630,128 @@ phases:
 validation:
   pre_apply:
     - syntax_check
-    - dependency_check
 
   post_apply:
-    - unit_test_validation
+    - functionality_test
 """
+
+    def apply_context_to_plan(base_plan, objectives, architecture_notes, context_files):
+        """Pass 2: Apply context to enhance the plan"""
+        enhanced_plan = base_plan
+
+        # Add objectives section if we have objectives
+        if objectives:
+            objectives_yaml = "\n".join(f'    - "{obj}"' for obj in objectives)
+            objectives_section = f"""
+  objectives:
+{objectives_yaml}"""
+            enhanced_plan = enhanced_plan.replace(
+                f'  description: "{project_description}"',
+                f'  description: "{project_description}"{objectives_section}'
+            )
+
+        # Add architecture constraints if we have them
+        if architecture_notes:
+            arch_yaml = "\n".join(f'    - "{note}"' for note in architecture_notes)
+            architecture_section = f"""
+  architecture_constraints:
+{arch_yaml}"""
+            enhanced_plan = enhanced_plan.replace(
+                objectives_section if objectives else f'  description: "{project_description}"',
+                (objectives_section if objectives else f'  description: "{project_description}"') + architecture_section
+            )
+
+        # Replace features based on objectives
+        if objectives:
+            features = []
+            for obj in objectives:
+                if "cleanup" in obj.lower() or "remove" in obj.lower() or "reduce" in obj.lower():
+                    features.append("code_cleanup")
+                    features.append("tool_management")
+                elif "test" in obj.lower():
+                    features.append("testing_improvements")
+                elif "documentation" in obj.lower() or "docs" in obj.lower():
+                    features.append("documentation_updates")
+
+            if features:
+                features_yaml = "\n".join(f"    - {feature}" for feature in set(features))
+                enhanced_plan = enhanced_plan.replace(
+                    "  features:\n    - basic_structure\n    - documentation",
+                    f"  features:\n{features_yaml}"
+                )
+
+        # Replace resources with context files
+        if context_files:
+            context_resources = []
+            for cf in context_files[:5]:  # Limit to first 5 files
+                if ":" in cf:
+                    category, filepath = cf.split(": ", 1)
+                    if category == "source":
+                        context_resources.append(f'    - path: "{filepath}"\n      type: "source_code"\n      template: "python_main"')
+                    elif category == "docs":
+                        context_resources.append(f'    - path: "{filepath}"\n      type: "documentation"\n      template: "basic_readme"')
+                    elif category == "config":
+                        context_resources.append(f'    - path: "{filepath}"\n      type: "configuration"\n      template: "basic_readme"')
+
+            if context_resources:
+                enhanced_plan = enhanced_plan.replace(
+                    '  files:\n    - path: "README.md"\n      type: "documentation"\n      template: "basic_readme"',
+                    f'  files:\n{chr(10).join(context_resources)}'
+                )
+
+        # Replace phases for cleanup projects
+        if any("cleanup" in obj.lower() for obj in objectives):
+            cleanup_phases = """phases:
+  analysis:
+    priority: 1
+    tasks:
+      - analyze_current_tools
+      - identify_tools_to_remove
+      - document_dependencies
+
+  cleanup:
+    priority: 2
+    dependencies: ["analysis"]
+    tasks:
+      - remove_unused_tools
+      - update_tool_schemas
+      - clean_test_files
+
+  testing:
+    priority: 3
+    dependencies: ["cleanup"]
+    tasks:
+      - test_remaining_tools
+      - run_unit_tests
+      - verify_tool_functionality"""
+
+            # Replace the entire phases section
+            import re
+            enhanced_plan = re.sub(
+                r'phases:.*?(?=validation:)',
+                cleanup_phases + '\n\n',
+                enhanced_plan,
+                flags=re.DOTALL
+            )
+
+        # Add context file reference
+        if context_files:
+            context_comment = f"""
+# Context Files Referenced:
+{chr(10).join(f"# - {cf}" for cf in context_files[:10])}
+
+"""
+            enhanced_plan = context_comment + enhanced_plan
+
+        return enhanced_plan
+
+    # Generate context-aware plan content using two-pass approach
+    if template == "basic" or not template:
+        # Pass 1: Generate base plan structure
+        base_plan = generate_base_plan(name, project_type, project_description)
+
+        # Pass 2: Apply context to enhance the plan (buffered, single write)
+        plan_content = apply_context_to_plan(base_plan, objectives, architecture_notes, context_files)
     elif template == "fastapi":
         plan_content = f"""schema_version: "1.0"
 # Development Plan: {name}
@@ -925,15 +1089,7 @@ validation:
     - unit_test_validation
 """
 
-        # Add context information to plan if provided
-    if context_files:
-        context_section = f"""
-# Context Files
-# These files were specified as relevant context for this plan:
-{chr(10).join(f"# - {f}" for f in context_files)}
-
-"""
-        plan_content = context_section + plan_content
+        # Context information is now embedded in the plan content itself
 
     # Validate plan content before writing
     is_valid, error_msg, _ = validate_plan_content(plan_content)
