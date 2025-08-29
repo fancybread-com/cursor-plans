@@ -35,15 +35,20 @@ def main(port: int, transport: str) -> int:
         """List all available development planning tools."""
         return [
             types.Tool(
-                name="dev_plan_init",
+                name="plan_init",
                 title="Initialize Development Planning",
-                description="Initialize development planning for a project using a YAML context file",
+                description="Initialize development planning",
                 inputSchema={
                     "type": "object",
                     "properties": {
                         "context": {
                             "type": "string",
                             "description": "Path to YAML context file containing project configuration and file patterns",
+                        },
+                        "project_directory": {
+                            "type": "string",
+                            "description": "Project directory (default: current working directory)",
+                            "default": ".",
                         },
                         "reset": {
                             "type": "boolean",
@@ -55,139 +60,32 @@ def main(port: int, transport: str) -> int:
                 },
             ),
             types.Tool(
-                name="dev_plan_create",
-                title="Create Development Plan",
-                description="Create a new .devplan file with basic structure",
+                name="plan_prepare",
+                title="Prepare Development Plan",
+                description="Create a development plan from templates",
                 inputSchema={
                     "type": "object",
-                    "required": ["name"],
                     "properties": {
                         "name": {
                             "type": "string",
-                            "description": "Name of the development plan",
+                            "description": "Name of the development plan to create",
+                            "default": "project",
                         },
                         "template": {
                             "type": "string",
                             "description": "Template to use (basic, fastapi, dotnet, vuejs)",
                             "default": "basic",
                         },
-                        "context": {
-                            "type": "string",
-                            "description": "Context identifier (story-123, feature-auth, etc.) - creates context-{name}.txt",
-                            "default": "",
-                        },
-                        "project_directory": {
-                            "type": "string",
-                            "description": "Project directory to create plan in (default: current working directory)",
-                            "default": ".",
-                        },
                     },
+                    "required": [],
                 },
             ),
-            types.Tool(
-                name="dev_plan_show",
-                title="Show Development Plan",
-                description="Display the current development plan",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "plan_file": {
-                            "type": "string",
-                            "description": "Path to .devplan file (default: ./.cursorplans/project.devplan)",
-                            "default": "./project.devplan",
-                        },
-                        "project_directory": {
-                            "type": "string",
-                            "description": "Project directory to look for plan in (default: current working directory)",
-                            "default": ".",
-                        }
-                    },
-                },
-            ),
-            types.Tool(
-                name="dev_state_show",
-                title="Show Current State",
-                description="Show the current state of the codebase",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "directory": {
-                            "type": "string",
-                            "description": "Directory to analyze (default: current directory)",
-                            "default": ".",
-                        }
-                    },
-                },
-            ),
-            types.Tool(
-                name="dev_state_diff",
-                title="Show State Differences",
-                description="Compare current state with target state from plan",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "plan_file": {
-                            "type": "string",
-                            "description": "Path to .devplan file (default: ./.cursorplans/project.devplan)",
-                            "default": "./project.devplan",
-                        }
-                    },
-                },
-            ),
-            types.Tool(
-                name="dev_context_list",
-                title="List Project Context",
-                description="List files and folders with context for existing codebases",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "directory": {
-                            "type": "string",
-                            "description": "Directory to analyze (default: current directory)",
-                            "default": ".",
-                        },
-                        "include_content": {
-                            "type": "boolean",
-                            "description": "Include file content previews",
-                            "default": False,
-                        },
-                        "max_depth": {
-                            "type": "integer",
-                            "description": "Maximum directory depth to analyze",
-                            "default": 3,
-                        },
 
-                    },
-                },
-            ),
+
+
+
             types.Tool(
-                name="dev_context_add",
-                title="Add Files to Context",
-                description="Add specific files or folders to development context for planning",
-                inputSchema={
-                    "type": "object",
-                    "required": ["files"],
-                    "properties": {
-                        "files": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "List of files or folders to add to context",
-                        },
-                        "context": {
-                            "type": "string",
-                            "description": "Context name (story-123, feature-auth, etc.)",
-                            "default": "main",
-                        },
-                        "description": {
-                            "type": "string",
-                            "description": "Optional description of why these files are relevant",
-                            "default": "",
-                        },
-                    },
-                },
-            ),
-            types.Tool(
-                name="dev_plan_validate",
+                name="plan_validate",
                 title="Validate Development Plan",
                 description="Validate development plan syntax, logic, and compliance",
                 inputSchema={
@@ -212,7 +110,7 @@ def main(port: int, transport: str) -> int:
                 },
             ),
             types.Tool(
-                name="dev_apply_plan",
+                name="plan_apply",
                 title="Apply Development Plan",
                 description="Execute a development plan to create/modify files",
                 inputSchema={
@@ -231,29 +129,7 @@ def main(port: int, transport: str) -> int:
                     },
                 },
             ),
-            types.Tool(
-                name="dev_rollback",
-                title="Rollback Changes",
-                description="Rollback to a previous state snapshot",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "snapshot_id": {
-                            "type": "string",
-                            "description": "ID of the snapshot to rollback to",
-                        },
-                    },
-                },
-            ),
-            types.Tool(
-                name="dev_snapshots",
-                title="List Snapshots",
-                description="List available state snapshots",
-                inputSchema={
-                    "type": "object",
-                    "properties": {},
-                },
-            ),
+
 
         ]
 
@@ -261,28 +137,14 @@ def main(port: int, transport: str) -> int:
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.ContentBlock]:
         """Handle tool calls for development planning operations."""
 
-        if name == "dev_plan_init":
+        if name == "plan_init":
             return await init_dev_planning(arguments)
-        elif name == "dev_plan_create":
-            return await create_dev_plan(arguments)
-        elif name == "dev_plan_show":
-            return await show_dev_plan(arguments)
-        elif name == "dev_state_show":
-            return await show_current_state(arguments)
-        elif name == "dev_state_diff":
-            return await show_state_diff(arguments)
-        elif name == "dev_context_list":
-            return await list_project_context(arguments)
-        elif name == "dev_context_add":
-            return await add_context_files(arguments)
-        elif name == "dev_plan_validate":
+        elif name == "plan_prepare":
+            return await prepare_dev_plan(arguments)
+        elif name == "plan_validate":
             return await validate_dev_plan(arguments)
-        elif name == "dev_apply_plan":
+        elif name == "plan_apply":
             return await apply_dev_plan(arguments)
-        elif name == "dev_rollback":
-            return await rollback_to_snapshot(arguments)
-        elif name == "dev_snapshots":
-            return await list_snapshots(arguments)
         else:
             raise ValueError(f"Unknown tool: {name}")
 
@@ -324,8 +186,72 @@ def main(port: int, transport: str) -> int:
     return 0
 
 
+async def prepare_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
+    """Create a development plan using stored context information."""
+    global _project_context
+
+    name = arguments.get("name", "project")
+    template = arguments.get("template", "basic")
+
+    # Use stored project context if available
+    if not _project_context:
+        return [
+            types.TextContent(
+                type="text",
+                text="❌ **Error**: No project context found. Please run plan_init first.\n\nUsage: plan_init context=\"project-context.yaml\""
+            )
+        ]
+
+    project_path = Path(_project_context.get("project_directory", "."))
+    cursorplans_dir = project_path / ".cursorplans"
+
+    # Ensure .cursorplans directory exists
+    if not cursorplans_dir.exists():
+        cursorplans_dir.mkdir(exist_ok=True)
+
+    # Create the development plan
+    plan_creation_result = await _create_plan_file(
+        name, template, project_path, cursorplans_dir,
+        _project_context.get("project_name", name),
+        _project_context.get("project_type", "unknown"),
+        _project_context.get("project_description", "A software project"),
+        _project_context.get("objectives", []),
+        _project_context.get("architecture_notes", []),
+        _project_context.get("context_files", [])
+    )
+
+    # Generate success message
+    if plan_creation_result["success"]:
+        success_message = f"""✅ **Development Plan Created**
+
+📄 **Plan File**: `{plan_creation_result['plan_file']}`
+🎯 **Name**: `{name}`
+🔧 **Template**: `{template}`
+
+**Next Steps:**
+1. Validate your plan:
+   ```bash
+   plan_validate plan_file="{name}.devplan"
+   ```
+
+2. Apply your plan:
+   ```bash
+   plan_apply plan_file="{name}.devplan" dry_run=true
+   ```
+"""
+    else:
+        success_message = f"❌ **Plan Creation Failed**\n\n{plan_creation_result['error']}"
+
+    return [
+        types.TextContent(
+            type="text",
+            text=success_message
+        )
+    ]
+
+
 async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Initialize development planning for a project using a YAML context file."""
+    """Initialize development planning."""
     import os
     import shutil
     from pathlib import Path
@@ -333,6 +259,7 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
     global _project_context
 
     context_file = arguments.get("context")
+    project_directory = arguments.get("project_directory", ".")
     reset = arguments.get("reset", False)
 
     if not context_file:
@@ -382,7 +309,11 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
 
     # Extract project configuration
     project_config = context_config['project']
-    project_directory = project_config.get('directory', '.')
+    # Use parameter project_directory if provided, otherwise use context file directory
+    if arguments.get("project_directory") and arguments.get("project_directory") != ".":
+        project_directory = arguments.get("project_directory")
+    else:
+        project_directory = project_config.get('directory', '.')
     project_name = project_config.get('name', 'unknown')
     project_type = project_config.get('type', 'unknown')
     project_description = project_config.get('description', '')
@@ -391,10 +322,7 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
 
     # Resolve the project directory
     if project_directory == "." or not project_directory:
-        if "PWD" in os.environ:
-            project_directory = os.environ["PWD"]
-        else:
-            project_directory = os.getcwd()
+        project_directory = os.getcwd()
 
     project_path = Path(project_directory).resolve()
 
@@ -523,17 +451,17 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
 **Next Steps:**
 1. Create your first plan:
    ```bash
-   dev_plan_create name="my-feature" template="basic"
+   plan_prepare name="my-project" template="basic"
    ```
 
 2. Validate your plan:
    ```bash
-   dev_plan_validate plan_file="my-feature.devplan"
+   plan_validate plan_file="my-project.devplan"
    ```
 
 3. Apply your plan:
    ```bash
-   dev_apply_plan plan_file="my-feature.devplan" dry_run=true
+   plan_apply plan_file="my-project.devplan" dry_run=true
    ```
 """
 
@@ -545,47 +473,15 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
     ]
 
 
-async def create_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Create a new development plan file using stored context information."""
-    global _project_context
-
-    name = arguments["name"]
-    template = arguments.get("template", "basic")
-    context = arguments.get("context", "")
-    project_directory = arguments.get("project_directory", ".")
-
-    # Use stored project context if available
-    if _project_context:
-        project_directory = _project_context.get("project_directory", project_directory)
-        project_name = _project_context.get("project_name", name)
-        project_type = _project_context.get("project_type", "unknown")
-        project_description = _project_context.get("project_description", "A software project")
-        objectives = _project_context.get("objectives", [])
-        architecture_notes = _project_context.get("architecture_notes", [])
-        context_files = _project_context.get("context_files", [])
-    else:
-        # Fallback when no context is available
-        project_name = name
-        project_type = "unknown"
-        project_description = "A new software project"
-        objectives = []
-        architecture_notes = []
-        context_files = []
-
-    # Resolve project directory fallback
-    if project_directory == "." or not project_directory:
-        import os
-        if "PWD" in os.environ:
-            project_directory = os.environ["PWD"]
-        else:
-            project_directory = os.getcwd()
-
-    project_path = Path(project_directory).resolve()
-
-    # Two-pass approach: Generate base plan, then apply context
-    def generate_base_plan(name, project_type, project_description):
-        """Pass 1: Generate base plan structure"""
-        return f"""schema_version: "1.0"
+async def _create_plan_file(name: str, template: str, project_path: Path, cursorplans_dir: Path,
+                           project_name: str, project_type: str, project_description: str,
+                           objectives: list, architecture_notes: list, context_files: list) -> dict:
+    """Helper function to create a plan file."""
+    try:
+        # Generate plan content using the same logic as create_dev_plan
+        def generate_base_plan(name, project_type, project_description):
+            """Pass 1: Generate base plan structure"""
+            return f"""schema_version: "1.0"
 # Development Plan: {name}
 
 project:
@@ -640,143 +536,85 @@ validation:
     - functionality_test
 """
 
-    def apply_context_to_plan(base_plan, objectives, architecture_notes, context_files):
-        """Pass 2: Apply context to enhance the plan"""
-        enhanced_plan = base_plan
+        def apply_context_to_plan(base_plan, objectives, architecture_notes, context_files):
+            """Pass 2: Apply context to enhance the plan"""
+            enhanced_plan = base_plan
 
-        # Add objectives section if we have objectives
-        if objectives:
-            objectives_yaml = "\n".join(f'    - "{obj}"' for obj in objectives)
-            objectives_section = f"""
+            # Add objectives section if we have objectives
+            if objectives:
+                objectives_yaml = "\n".join(f'    - "{obj}"' for obj in objectives)
+                objectives_section = f"""
   objectives:
 {objectives_yaml}"""
-            enhanced_plan = enhanced_plan.replace(
-                f'  description: "{project_description}"',
-                f'  description: "{project_description}"{objectives_section}'
-            )
+                enhanced_plan = enhanced_plan.replace(
+                    f'  description: "{project_description}"',
+                    f'  description: "{project_description}"{objectives_section}'
+                )
 
-        # Add architecture constraints if we have them
-        if architecture_notes:
-            arch_yaml = "\n".join(f'    - "{note}"' for note in architecture_notes)
-            architecture_section = f"""
+            # Add architecture constraints if we have them
+            if architecture_notes:
+                arch_yaml = "\n".join(f'    - "{note}"' for note in architecture_notes)
+                architecture_section = f"""
   architecture_constraints:
 {arch_yaml}"""
-            enhanced_plan = enhanced_plan.replace(
-                objectives_section if objectives else f'  description: "{project_description}"',
-                (objectives_section if objectives else f'  description: "{project_description}"') + architecture_section
-            )
-
-        # Replace features based on objectives
-        if objectives:
-            features = []
-            for obj in objectives:
-                if "cleanup" in obj.lower() or "remove" in obj.lower() or "reduce" in obj.lower():
-                    features.append("code_cleanup")
-                    features.append("tool_management")
-                elif "test" in obj.lower():
-                    features.append("testing_improvements")
-                elif "documentation" in obj.lower() or "docs" in obj.lower():
-                    features.append("documentation_updates")
-
-            if features:
-                features_yaml = "\n".join(f"    - {feature}" for feature in set(features))
                 enhanced_plan = enhanced_plan.replace(
-                    "  features:\n    - basic_structure\n    - documentation",
-                    f"  features:\n{features_yaml}"
+                    objectives_section if objectives else f'  description: "{project_description}"',
+                    (objectives_section if objectives else f'  description: "{project_description}"') + architecture_section
                 )
 
-        # Replace resources with context files
-        if context_files:
-            context_resources = []
-            for cf in context_files[:5]:  # Limit to first 5 files
-                if ":" in cf:
-                    category, filepath = cf.split(": ", 1)
-                    if category == "source":
-                        context_resources.append(f'    - path: "{filepath}"\n      type: "source_code"\n      template: "python_main"')
-                    elif category == "docs":
-                        context_resources.append(f'    - path: "{filepath}"\n      type: "documentation"\n      template: "basic_readme"')
-                    elif category == "config":
-                        context_resources.append(f'    - path: "{filepath}"\n      type: "configuration"\n      template: "basic_readme"')
+            return enhanced_plan
 
-            if context_resources:
-                enhanced_plan = enhanced_plan.replace(
-                    '  files:\n    - path: "README.md"\n      type: "documentation"\n      template: "basic_readme"',
-                    f'  files:\n{chr(10).join(context_resources)}'
-                )
-
-        # Replace phases for cleanup projects
-        if any("cleanup" in obj.lower() for obj in objectives):
-            cleanup_phases = """phases:
-  analysis:
-    priority: 1
-    tasks:
-      - analyze_current_tools
-      - identify_tools_to_remove
-      - document_dependencies
-
-  cleanup:
-    priority: 2
-    dependencies: ["analysis"]
-    tasks:
-      - remove_unused_tools
-      - update_tool_schemas
-      - clean_test_files
-
-  testing:
-    priority: 3
-    dependencies: ["cleanup"]
-    tasks:
-      - test_remaining_tools
-      - run_unit_tests
-      - verify_tool_functionality"""
-
-            # Replace the entire phases section
-            import re
-            enhanced_plan = re.sub(
-                r'phases:.*?(?=validation:)',
-                cleanup_phases + '\n\n',
-                enhanced_plan,
-                flags=re.DOTALL
-            )
-
-        # Add context file reference
-        if context_files:
-            context_comment = f"""
-# Context Files Referenced:
-{chr(10).join(f"# - {cf}" for cf in context_files[:10])}
-
-"""
-            enhanced_plan = context_comment + enhanced_plan
-
-        return enhanced_plan
-
-    # Generate context-aware plan content using two-pass approach
-    if template == "basic" or not template:
-        # Pass 1: Generate base plan structure
+        # Generate plan content
         base_plan = generate_base_plan(name, project_type, project_description)
-
-        # Pass 2: Apply context to enhance the plan (buffered, single write)
         plan_content = apply_context_to_plan(base_plan, objectives, architecture_notes, context_files)
-    elif template == "fastapi":
-        plan_content = f"""schema_version: "1.0"
+
+        # Add template-specific content
+        if template == "fastapi":
+            plan_content = _get_fastapi_template(name)
+        elif template == "dotnet":
+            plan_content = _get_dotnet_template(name)
+        elif template == "vuejs":
+            plan_content = _get_vuejs_template(name)
+
+        # Validate plan content
+        from .schema import validate_plan_content
+        is_valid, error_msg, _ = validate_plan_content(plan_content)
+        if not is_valid:
+            return {"success": False, "error": f"Schema validation failed: {error_msg}"}
+
+        # Write the plan file
+        plan_file = cursorplans_dir / f"{name}.devplan"
+        with open(plan_file, "w") as f:
+            f.write(plan_content)
+
+        return {"success": True, "plan_file": str(plan_file)}
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+def _get_fastapi_template(name: str) -> str:
+    """Get FastAPI template content."""
+    return f"""schema_version: "1.0"
 # Development Plan: {name}
 
 project:
   name: "{name}"
   version: "0.1.0"
-  description: "FastAPI web service"
+  description: "FastAPI web service with database"
 
 target_state:
   architecture:
-    - language: "python"
+    - language: "Python"
     - framework: "FastAPI"
-    - database: "PostgreSQL"
+    - database: "SQLAlchemy"
     - auth: "JWT"
 
   features:
     - api_endpoints
     - database_models
     - authentication
+    - documentation
     - testing
 
 resources:
@@ -786,18 +624,17 @@ resources:
       template: "fastapi_main"
     - path: "src/models.py"
       type: "data_model"
-      template: "sqlalchemy_models"
-    - path: "src/auth.py"
-      type: "authentication"
-      template: "jwt_auth"
+      template: "fastapi_model"
     - path: "requirements.txt"
       type: "dependencies"
-      template: "fastapi_requirements"
+      template: "requirements"
 
   dependencies:
-    - "fastapi"
-    - "sqlalchemy"
-    - "pyjwt"
+    - "fastapi>=0.104.0"
+    - "uvicorn>=0.24.0"
+    - "sqlalchemy>=2.0.0"
+    - "pyjwt>=2.8.0"
+    - "python-multipart>=0.0.6"
 
 phases:
   foundation:
@@ -818,14 +655,14 @@ phases:
     dependencies: ["data_layer"]
     tasks:
       - create_endpoints
-      - add_middleware
+      - add_validation
 
   security:
     priority: 4
     dependencies: ["api_layer"]
     tasks:
-      - implement_authentication
-      - add_authorization
+      - implement_jwt
+      - add_auth_middleware
 
   testing:
     priority: 5
@@ -837,30 +674,35 @@ phases:
 validation:
   pre_apply:
     - syntax_check
-    - security_scan
     - dependency_check
+
+  post_apply:
+    - api_test_validation
 """
-    elif template == "dotnet":
-        plan_content = f"""schema_version: "1.0"
+
+
+def _get_dotnet_template(name: str) -> str:
+    """Get .NET template content."""
+    return f"""schema_version: "1.0"
 # Development Plan: {name}
 
 project:
   name: "{name}"
-  version: "1.0.0"
-  description: ".NET Web API service"
+  version: "0.1.0"
+  description: ".NET 8 Web API with Entity Framework"
 
 target_state:
   architecture:
     - language: "C#"
     - framework: ".NET 8"
-    - api_type: "Web API"
-    - database: "SQL Server"
+    - type: "Web API"
+    - database: "Entity Framework Core"
     - auth: "JWT Bearer"
 
   features:
-    - web_api_controllers
-    - entity_framework_models
-    - authentication_authorization
+    - web_api
+    - entity_framework
+    - jwt_authentication
     - swagger_documentation
     - unit_testing
 
@@ -872,10 +714,10 @@ resources:
     - path: "Controllers/BaseController.cs"
       type: "api_controller"
       template: "dotnet_controller"
-    - path: "Models/AppDbContext.cs"
+    - path: "Data/AppDbContext.cs"
       type: "data_context"
       template: "ef_dbcontext"
-    - path: "Services/IAuthService.cs"
+    - path: "Services/AuthService.cs"
       type: "service_interface"
       template: "dotnet_service"
     - path: "{name}.csproj"
@@ -894,33 +736,29 @@ phases:
   foundation:
     priority: 1
     tasks:
-      - create_project_structure
-      - setup_dependency_injection
-      - configure_swagger
+      - setup_project_structure
+      - install_dependencies
 
   data_layer:
     priority: 2
     dependencies: ["foundation"]
     tasks:
-      - setup_entity_framework
       - create_models
-      - configure_database
+      - setup_entity_framework
 
   api_layer:
     priority: 3
     dependencies: ["data_layer"]
     tasks:
-      - create_controllers
-      - implement_crud_operations
-      - add_validation
+      - create_endpoints
+      - add_controllers
 
   security:
     priority: 4
     dependencies: ["api_layer"]
     tasks:
-      - implement_jwt_authentication
-      - add_authorization_policies
-      - secure_endpoints
+      - implement_jwt
+      - add_auth_middleware
 
   testing:
     priority: 5
@@ -928,16 +766,21 @@ phases:
     tasks:
       - unit_tests
       - integration_tests
-      - api_tests
 
 validation:
   pre_apply:
-    - dotnet_build_check
-    - security_scan
-    - code_analysis
+    - syntax_check
+    - dependency_check
+
+  post_apply:
+    - build_test
 """
-    elif template == "vuejs":
-        plan_content = f"""# Development Plan: {name}
+
+
+def _get_vuejs_template(name: str) -> str:
+    """Get Vue.js template content."""
+    return f"""schema_version: "1.0"
+# Development Plan: {name}
 
 project:
   name: "{name}"
@@ -1048,400 +891,11 @@ validation:
     - vue_template_validation
     - dependency_audit
 """
-    else:
-        plan_content = f"""schema_version: "1.0"
-# Development Plan: {name}
 
-project:
-  name: "{name}"
-  version: "0.1.0"
-  description: "Custom project"
 
-target_state:
-  architecture:
-    - language: "TBD"
-    - framework: "TBD"
 
-  features:
-    - custom_features
 
-resources:
-  files:
-    - path: "README.md"
-      type: "documentation"
-      template: "basic_readme"
 
-phases:
-  foundation:
-    priority: 1
-    tasks:
-      - setup_project_structure
-      - create_basic_files
-
-  development:
-    priority: 2
-    dependencies: ["foundation"]
-    tasks:
-      - implement_core_features
-      - add_tests
-
-validation:
-  pre_apply:
-    - syntax_check
-    - dependency_check
-
-  post_apply:
-    - unit_test_validation
-"""
-
-        # Context information is now embedded in the plan content itself
-
-    # Validate plan content before writing
-    is_valid, error_msg, _ = validate_plan_content(plan_content)
-    if not is_valid:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ Schema validation failed: {error_msg}\n\nPlan content:\n```yaml\n{plan_content}\n```"
-            )
-        ]
-
-    # Write the plan file
-    # Create .cursorplans directory if it doesn't exist
-    cursorplans_dir = project_path / ".cursorplans"
-
-    try:
-        cursorplans_dir.mkdir(exist_ok=True)
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ Error creating .cursorplans directory: {str(e)}\n\nPath: {cursorplans_dir}\n\nThis might be a permissions issue or the path might be invalid."
-            )
-        ]
-
-    plan_file = cursorplans_dir / f"{name}.devplan"
-
-    try:
-        with open(plan_file, "w") as f:
-            f.write(plan_content)
-
-        context_info = ""
-        if context_files:
-            context_info = f"\n📁 Context files included: {len(context_files)} files"
-
-        return [
-            types.TextContent(
-                type="text",
-                text=f"✅ Created development plan: {plan_file}\n\nTemplate: {template}{context_info}\n\nNext steps:\n1. Review and customize the plan\n2. Run `dev_state_diff` to see what changes are needed\n3. Use `dev_apply_plan` to execute the plan"
-            )
-        ]
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ Error creating plan file: {str(e)}"
-            )
-        ]
-
-
-async def show_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Show the current development plan."""
-    global _project_context
-
-    plan_file = arguments.get("plan_file", "./project.devplan")
-    project_directory = arguments.get("project_directory", ".")
-
-    # Use stored project context if available and no explicit project_directory provided
-    if (project_directory == "." or not project_directory) and _project_context:
-        project_directory = _project_context["project_directory"]
-
-    try:
-        project_path = Path(project_directory).resolve()
-
-        # If no specific path is provided, look in .cursorplans directory first
-        if plan_file == "./project.devplan":
-            cursorplans_path = project_path / ".cursorplans" / "project.devplan"
-            if cursorplans_path.exists():
-                plan_file = str(cursorplans_path)
-
-        if not os.path.exists(plan_file):
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"❌ Plan file not found: {plan_file}\n\nCreate one with `dev_plan_create`"
-                )
-            ]
-
-        with open(plan_file, "r") as f:
-            content = f.read()
-
-        return [
-            types.TextContent(
-                type="text",
-                text=f"📋 Development Plan: {plan_file}\n\n```yaml\n{content}\n```"
-            )
-        ]
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ Error reading plan file: {str(e)}"
-            )
-        ]
-
-
-async def show_current_state(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Show the current state of the codebase."""
-    directory = arguments.get("directory", ".")
-
-    try:
-        current_dir = Path(directory)
-        if not current_dir.exists():
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"❌ Directory not found: {directory}"
-                )
-            ]
-
-        # Analyze current state with strict project boundary enforcement
-        files = []
-        max_files = 1000  # Limit total files to prevent excessive scanning
-
-        # Get the absolute path of the current directory
-        current_abs = current_dir.resolve()
-
-        # Use a much simpler approach - only scan the immediate directory and known project subdirectories
-        try:
-            # Get immediate files only
-            for item in current_dir.iterdir():
-                if len(files) >= max_files:
-                    break
-
-                if item.is_file() and not str(item).startswith("."):
-                    try:
-                        relative_path = str(item.relative_to(current_dir))
-                        files.append(relative_path)
-                    except (PermissionError, OSError, ValueError):
-                        continue
-
-            # Only scan specific known project directories
-            project_dirs = ["cursor-plans", "src", "tests", "docs", "examples"]
-            for dir_name in project_dirs:
-                if len(files) >= max_files:
-                    break
-
-                project_dir = current_dir / dir_name
-                if project_dir.exists() and project_dir.is_dir():
-                    try:
-                        for item in project_dir.rglob("*"):
-                            if len(files) >= max_files:
-                                break
-
-                            if item.is_file() and not str(item).startswith("."):
-                                try:
-                                    relative_path = str(item.relative_to(current_dir))
-                                    # Skip build and cache directories
-                                    if any(skip_dir in relative_path for skip_dir in [
-                                        "node_modules/", ".git/", "__pycache__/",
-                                        ".pytest_cache/", ".DS_Store", ".Trash"
-                                    ]):
-                                        continue
-                                    files.append(relative_path)
-                                except (PermissionError, OSError, ValueError):
-                                    continue
-                    except (PermissionError, OSError):
-                        continue
-
-        except (PermissionError, OSError) as e:
-            # If we can't scan the directory at all, return a limited analysis
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"⚠️ Limited analysis due to permission restrictions: {str(e)}\n\n"
-                         f"🔍 Current Codebase State for: {directory}\n"
-                         f"📁 **Accessible Files**: Limited\n"
-                         f"💡 **Suggestion**: Run from project directory or check permissions"
-                )
-            ]
-
-        # Check for common project files
-        project_files = {
-            "README.md": "📖 Documentation",
-            "requirements.txt": "📦 Python dependencies",
-            "package.json": "📦 Node.js dependencies",
-            "pyproject.toml": "🔧 Python project config",
-            "Dockerfile": "🐳 Container config",
-            ".gitignore": "🚫 Git ignore rules",
-        }
-
-        found_files = []
-        missing_files = []
-
-        for file, desc in project_files.items():
-            if file in files:
-                found_files.append(f"✅ {file} - {desc}")
-            else:
-                missing_files.append(f"❌ {file} - {desc}")
-
-        state_report = f"""🔍 Current Codebase State for: {directory}
-
-📁 **Total Files**: {len(files)}
-
-🔍 **Key Project Files**:
-{chr(10).join(found_files)}
-
-❓ **Missing Common Files**:
-{chr(10).join(missing_files)}
-
-📂 **All Files**:
-{chr(10).join(f"  - {f}" for f in sorted(files)[:20])}
-{"..." if len(files) > 20 else ""}
-"""
-
-        return [
-            types.TextContent(
-                type="text",
-                text=state_report
-            )
-        ]
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ Error analyzing directory: {str(e)}"
-            )
-        ]
-
-
-async def show_state_diff(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Compare current state with target state from plan."""
-    plan_file = arguments.get("plan_file", "./project.devplan")
-
-    try:
-        # If no specific path is provided, look in .cursorplans directory first
-        if plan_file == "./project.devplan":
-            cursorplans_path = Path(".cursorplans") / "project.devplan"
-            if cursorplans_path.exists():
-                plan_file = str(cursorplans_path)
-
-        if not os.path.exists(plan_file):
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"❌ Plan file not found: {plan_file}\n\nCreate one with `dev_plan_create`"
-                )
-            ]
-
-        # Read the actual plan content
-        with open(plan_file, "r") as f:
-            plan_content = f.read()
-
-        # Parse YAML content to extract file information
-        import yaml
-        try:
-            plan_data = yaml.safe_load(plan_content)
-        except yaml.YAMLError as e:
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"❌ Error parsing plan YAML: {str(e)}\n\nPlan file: {plan_file}"
-                )
-            ]
-
-        # Extract files from the plan structure
-        planned_files = set()
-        if plan_data and 'resources' in plan_data and 'files' in plan_data['resources']:
-            for file_info in plan_data['resources']['files']:
-                if isinstance(file_info, dict) and 'path' in file_info:
-                    planned_files.add(file_info['path'])
-
-        # Also check for any other file references in the plan
-        lines = plan_content.split("\n")
-        for line in lines:
-            if "path:" in line and ":" in line:
-                # Extract path value more carefully
-                parts = line.split("path:", 1)
-                if len(parts) > 1:
-                    path = parts[1].strip().strip('"').strip("'")
-                    if path and not path.startswith("#"):
-                        planned_files.add(path)
-
-        # Get current files in the project (limited scope)
-        current_files = set()
-        current_dir = Path(".")
-
-        # Get immediate files only
-        for item in current_dir.iterdir():
-            if item.is_file() and not item.name.startswith("."):
-                try:
-                    relative_path = str(item.relative_to(current_dir))
-                    current_files.add(relative_path)
-                except ValueError:
-                    pass
-
-        # Only scan specific known project directories
-        project_dirs = ["cursor-plans", "src", "tests", "docs", "examples"]
-        for dir_name in project_dirs:
-            project_dir = current_dir / dir_name
-            if project_dir.exists() and project_dir.is_dir():
-                try:
-                    for item in project_dir.rglob("*"):
-                        if item.is_file() and not item.name.startswith("."):
-                            try:
-                                relative_path = str(item.relative_to(current_dir))
-                                current_files.add(relative_path)
-                            except ValueError:
-                                pass
-                except (PermissionError, OSError):
-                    pass
-
-        # Calculate differences
-        files_to_create = planned_files - current_files
-        files_existing = planned_files & current_files
-
-        # Create detailed diff report
-        diff_report = f"""🔄 State Difference Analysis
-
-📋 **Plan File**: {plan_file}
-📊 **Plan Content Length**: {len(plan_content)} characters
-
-📋 **Plan Summary**:
-  - Total planned files: {len(planned_files)}
-  - Files to create: {len(files_to_create)}
-  - Files already exist: {len(files_existing)}
-
-➕ **Files to Create**:
-{chr(10).join(f"  + {f}" for f in sorted(files_to_create)) if files_to_create else "  (none)"}
-
-✅ **Files Already Exist**:
-{chr(10).join(f"  ✓ {f}" for f in sorted(files_existing)) if files_existing else "  (none)"}
-
-🔍 **Debug Information**:
-  - Current directory files: {len(current_files)}
-  - Plan file exists: ✅
-  - Plan content parsed: ✅
-
-🚀 **Next Steps**:
-  1. Review the planned changes above
-  2. Use `dev_apply_plan` to create missing files
-  3. Customize templates and configurations as needed
-"""
-
-        return [
-            types.TextContent(
-                type="text",
-                text=diff_report
-            )
-        ]
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ Error analyzing state diff: {str(e)}\n\nPlan file: {plan_file}"
-            )
-        ]
 
 
 async def load_context_file(context_file_path: str) -> list[str]:
@@ -1458,77 +912,6 @@ async def load_context_file(context_file_path: str) -> list[str]:
     return context_files
 
 
-async def add_context_files(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Add specific files to development context."""
-    files = arguments["files"]
-    context = arguments.get("context", "main")
-    description = arguments.get("description", "")
-
-    context_file = f"context-{context}.txt" if context != "main" else "context.txt"
-
-    try:
-        # Load existing context
-        existing_context = []
-        if os.path.exists(context_file):
-            existing_context = await load_context_file(context_file)
-
-        # Add new files (avoid duplicates)
-        new_files = []
-        for file_path in files:
-            if file_path not in existing_context:
-                new_files.append(file_path)
-                existing_context.append(file_path)
-
-        # Write updated context file
-        with open(context_file, 'w') as f:
-            if description:
-                f.write(f"# {description}\n")
-            f.write("# Context files for development planning\n")
-            f.write("# Add files and folders that are relevant to your development plans\n\n")
-            for file_path in existing_context:
-                f.write(f"{file_path}\n")
-
-        # Verify files exist
-        existing_files = []
-        missing_files = []
-        for file_path in files:
-            if os.path.exists(file_path):
-                existing_files.append(file_path)
-            else:
-                missing_files.append(file_path)
-
-        result_text = f"✅ Updated context file: {context_file}\n\n"
-
-        if new_files:
-            result_text += f"➕ **Added {len(new_files)} new files:**\n"
-            result_text += "\n".join(f"  + {f}" for f in new_files) + "\n\n"
-
-        if existing_files:
-            result_text += f"✅ **Verified {len(existing_files)} files exist:**\n"
-            result_text += "\n".join(f"  ✓ {f}" for f in existing_files) + "\n\n"
-
-        if missing_files:
-            result_text += f"⚠️ **Warning - {len(missing_files)} files not found:**\n"
-            result_text += "\n".join(f"  ❌ {f}" for f in missing_files) + "\n\n"
-
-        result_text += f"📋 **Total context files**: {len(existing_context)}\n\n"
-        result_text += "💡 **Usage:**\n"
-        result_text += f"- Use `dev_plan_create name=\"project\" context=\"{context}\"` to create plans with this context\n"
-        result_text += f"- Use `@{context_file}` to reference this context in Cursor conversations"
-
-        return [
-            types.TextContent(
-                type="text",
-                text=result_text
-            )
-        ]
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ Error updating context file: {str(e)}"
-            )
-        ]
 
 
 async def detect_existing_codebase(directory: str, context_files: list[str] = None, suggest_name: bool = True) -> dict[str, Any]:
@@ -1668,143 +1051,8 @@ async def detect_existing_codebase(directory: str, context_files: list[str] = No
     return detected_info
 
 
-async def list_project_context(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """List files and folders with context for existing codebases."""
-    directory = arguments.get("directory", ".")
-    include_content = arguments.get("include_content", False)
-    max_depth = arguments.get("max_depth", 3)
-    context_files = arguments.get("context_files", [])
 
-    try:
-        current_dir = Path(directory)
-        if not current_dir.exists():
-            return [
-                types.TextContent(
-                    type="text",
-                    text=f"❌ Directory not found: {directory}"
-                )
-            ]
 
-        # Load context from file if available
-        if not context_files and os.path.exists("context.txt"):
-            context_files = await load_context_file("context.txt")
-
-        # Detect framework first
-        detected_info = await detect_existing_codebase(directory, context_files)
-
-        # Build directory tree (focus on context files if provided)
-        focused_analysis = bool(context_files)
-        tree_structure = []
-        ignore_patterns = {'.git', '.vscode', 'node_modules', '__pycache__', 'bin', 'obj', '.next', 'dist', 'build'}
-
-        def build_tree(path: Path, prefix: str = "", depth: int = 0):
-            if depth > max_depth:
-                return
-
-            items = []
-            try:
-                for item in sorted(path.iterdir()):
-                    if item.name.startswith('.') and item.name not in {'.env', '.gitignore', '.cursorrules'}:
-                        continue
-                    if item.name in ignore_patterns:
-                        continue
-                    items.append(item)
-            except PermissionError:
-                return
-
-            for i, item in enumerate(items):
-                is_last = i == len(items) - 1
-                current_prefix = "└── " if is_last else "├── "
-                tree_structure.append(f"{prefix}{current_prefix}{item.name}")
-
-                if item.is_dir() and depth < max_depth:
-                    extension = "    " if is_last else "│   "
-                    build_tree(item, prefix + extension, depth + 1)
-
-        build_tree(current_dir)
-
-        # Prepare context report
-        framework_info = ""
-        if detected_info["framework"]:
-            framework_info = f"""
-🔍 **Detected Framework**: {detected_info['framework'].upper()}
-📝 **Language**: {detected_info['language']}
-🏗️ **Structure**: {detected_info['structure']}
-{f"💡 **Suggested Name**: {detected_info['suggested_name']}" if detected_info['suggested_name'] else ""}
-"""
-
-        key_files_info = ""
-        if detected_info["key_files"]:
-            key_files_info = f"""
-🗝️ **Key Files Found**:
-{chr(10).join(f"  • {f}" for f in detected_info["key_files"][:10])}
-{"  • ..." if len(detected_info["key_files"]) > 10 else ""}
-"""
-
-        tree_display = chr(10).join(tree_structure[:50])
-        if len(tree_structure) > 50:
-            tree_display += "\n  ... (truncated)"
-
-        # Add context-specific information
-        context_info = ""
-        if context_files:
-            context_info = f"""
-🎯 **Focused Analysis** (using {len(context_files)} context files):
-{chr(10).join(f"  • {f}" for f in context_files[:10])}
-{"  • ..." if len(context_files) > 10 else ""}
-"""
-        elif os.path.exists("context.txt"):
-            context_info = f"""
-📋 **Context file found**: context.txt (use dev_context_add to manage)
-"""
-
-        context_report = f"""📂 **Project Context Analysis**: {directory}
-{framework_info}
-{context_info}
-{key_files_info}
-
-📁 **Directory Structure**:
-```
-{current_dir.name}/
-{tree_display}
-```
-
-💡 **Usage Tips**:
-- Use `dev_context_add files=["path1", "path2"]` to add files to context
-- Use `dev_plan_create name="project" template="from-existing"` to create a plan based on detected framework
-- Use `@context.txt` to reference context files in your conversations with Cursor
-- Consider creating a `.cursorrules` file to maintain consistency with detected patterns
-"""
-
-        # Add file content previews if requested
-        if include_content and detected_info["key_files"]:
-            content_previews = []
-            for file_path in detected_info["key_files"][:5]:  # Limit to first 5 files
-                try:
-                    full_path = current_dir / file_path
-                    if full_path.is_file() and full_path.stat().st_size < 10000:  # Skip large files
-                        with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
-                            content = f.read()[:500]  # First 500 chars
-                            content_previews.append(f"\n**{file_path}**:\n```\n{content}\n{'...' if len(content) == 500 else ''}\n```")
-                except Exception:
-                    continue
-
-            if content_previews:
-                context_report += f"\n\n📄 **File Previews**:{''.join(content_previews)}"
-
-        return [
-            types.TextContent(
-                type="text",
-                text=context_report
-            )
-        ]
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ Error analyzing project context: {str(e)}"
-            )
-        ]
 
 
 
@@ -1948,97 +1196,7 @@ async def apply_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
         ]
 
 
-async def rollback_to_snapshot(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """Rollback to a previous state snapshot."""
-    snapshot_id = arguments.get("snapshot_id")
 
-    if not snapshot_id:
-        return [
-            types.TextContent(
-                type="text",
-                text="❌ **Error:** No snapshot ID provided. Use `dev_snapshots` to list available snapshots."
-            )
-        ]
-
-    try:
-        # Initialize execution engine
-        executor = PlanExecutor()
-
-        # Perform rollback
-        result = await executor.rollback_to_snapshot(snapshot_id)
-
-        # Format results for Cursor chat
-        if result.success:
-            output = f"✅ **Rollback Completed**\n\n"
-            output += f"🔄 **Rolled back to:** {snapshot_id}\n"
-
-            if result.execution_time:
-                output += f"⏱️ **Rollback time:** {result.execution_time:.2f}s\n"
-        else:
-            output = f"❌ **Rollback Failed**\n\n"
-            output += f"🚫 **Error:** {result.error_message}\n"
-
-            if result.execution_time:
-                output += f"⏱️ **Attempt time:** {result.execution_time:.2f}s\n"
-
-        return [
-            types.TextContent(
-                type="text",
-                text=output
-            )
-        ]
-
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ **Rollback error:** {str(e)}\n\nThis may indicate a configuration issue with the snapshot system."
-            )
-        ]
-
-
-async def list_snapshots(arguments: dict[str, Any]) -> list[types.ContentBlock]:
-    """List available state snapshots."""
-    try:
-        # Initialize execution engine
-        executor = PlanExecutor()
-
-        # Get snapshots
-        snapshots = await executor.list_snapshots()
-
-        # Format results for Cursor chat
-        if snapshots:
-            output = f"📸 **Available Snapshots**\n\n"
-
-            for snapshot in snapshots:
-                output += f"**{snapshot['id']}**\n"
-                output += f"  📅 Created: {snapshot['created_at']}\n"
-                output += f"  📝 Description: {snapshot['description']}\n"
-                output += f"  📁 Files: {snapshot['file_count']}\n"
-                output += f"  💾 Size: {snapshot['total_size']} bytes\n"
-
-                if snapshot.get('restored_at'):
-                    output += f"  🔄 Restored: {snapshot['restored_at']}\n"
-
-                output += "\n"
-        else:
-            output = "📸 **No snapshots available**\n\n"
-            output += "Create snapshots by executing development plans with `dev_apply_plan`.\n"
-
-        return [
-            types.TextContent(
-                type="text",
-                text=output
-            )
-        ]
-
-    except Exception as e:
-        return [
-            types.TextContent(
-                type="text",
-                text=f"❌ **Snapshot listing error:** {str(e)}\n\nThis may indicate a configuration issue with the snapshot system."
-            )
-        ]
 
 
 if __name__ == "__main__":

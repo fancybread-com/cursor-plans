@@ -141,14 +141,13 @@ def sample_cursorrules(temp_dir):
 @pytest.fixture
 def sample_context_file(temp_dir):
     """Create a sample context file."""
-    context_content = """# Test context file
-src/main.py
-src/models.py
-requirements.txt
-README.md
+    context_content = """project:
+  name: test-project
+  type: python
+  description: A test project
 """
 
-    context_file = temp_dir / "context.txt"
+    context_file = temp_dir / "context.yaml"
     context_file.write_text(context_content)
     return context_file
 

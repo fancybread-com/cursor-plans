@@ -3,23 +3,17 @@
 ## **Quick Reference - Most Common Commands**
 
 ```bash
-# Initialize development planning for your project
-dev_plan_init project_directory="/path/to/your/project"
+# Initialize development planning
+plan_init context="project-context.yaml" project_directory="/path/to/your/project"
 
-# Create a new development plan
-dev_plan_create name="my-project" template="fastapi"
-
-# Show current project state
-dev_state_show
-
-# Compare current state with plan
-dev_state_diff
+# Prepare a development plan
+plan_prepare name="my-project" template="fastapi"
 
 # Validate a plan
-dev_plan_validate
+plan_validate
 
 # Show available snapshots
-dev_snapshots
+# Note: Snapshot management tools are currently being refactored
 ```
 
 ## **Getting Started**
@@ -29,11 +23,11 @@ dev_snapshots
 **First step for any project:**
 
 ```bash
-# Initialize development planning for your project:
-dev_plan_init project_directory="/path/to/your/project"
+# Initialize development planning:
+plan_init context="project-context.yaml" project_directory="/path/to/your/project"
 
 # Start over (purge all plans and reset context):
-dev_plan_init project_directory="/path/to/your/project" reset=true
+plan_init project_directory="/path/to/your/project" reset=true
 ```
 
 **What this does:**
@@ -43,11 +37,11 @@ dev_plan_init project_directory="/path/to/your/project" reset=true
 - ✅ Shows recommended templates for your project type
 - ✅ **Reset mode**: Purges all `.devplan` files and resets context
 
-### 2. Create Your First Plan
+### 2. Prepare Your First Plan
 
 ```bash
-# Create a development plan (project directory is remembered from init)
-dev_plan_create name="my-api" template="fastapi"
+# Create a development plan from templates
+plan_prepare name="my-api" template="fastapi"
 ```
 
 **Available Templates:**
@@ -114,83 +108,37 @@ Here are all the available tool calls you can directly use in Cursor's chat:
 
 ### **1. Initialize Development Planning**
 ```bash
-dev_plan_init project_directory="/Users/paul/projects/my-project"
-dev_plan_init project_directory="/Users/paul/projects/my-project" reset=true
+plan_init context="project-context.yaml" project_directory="/Users/paul/projects/my-project"
+plan_init project_directory="/Users/paul/projects/my-project" reset=true
 ```
 
 **Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
+| `context` | string | ✅ Yes | - | Path to YAML context file containing project configuration |
 | `project_directory` | string | ❌ No | Current directory | Path to your project directory |
 | `reset` | boolean | ❌ No | `false` | Purge all plans and reset context |
 
-### **2. Create Development Plans**
+### **2. Prepare Development Plans**
 ```bash
-dev_plan_create name="my-api-project" template="fastapi"
-dev_plan_create name="web-app" template="vuejs"
-dev_plan_create name="backend-service" template="dotnet"
-dev_plan_create name="simple-project" template="basic"
-dev_plan_create name="existing-project" template="basic"
+plan_prepare name="my-project" template="basic"
+plan_prepare name="my-api" template="fastapi"
+plan_prepare name="web-app" template="vuejs"
+plan_prepare name="backend-service" template="dotnet"
 ```
 
 **Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `name` | string | ✅ Yes | - | Name of the development plan (creates `{name}.devplan`) |
+| `name` | string | ❌ No | `project` | Name of the development plan (creates `{name}.devplan`) |
 | `template` | string | ❌ No | `basic` | Template to use: `basic`, `fastapi`, `dotnet`, `vuejs` |
-| `context` | string | ❌ No | `""` | Context identifier (story-123, feature-auth, etc.) - creates `context-{name}.txt` |
 
-**Advanced Examples:**
+### **3. Validate Plans**
 ```bash
-# Create plan with specific context
-dev_plan_create name="auth-feature" template="fastapi" context="story-456"
-
-# Create plan for existing project with context files
-dev_plan_create name="api-v2" template="dotnet" context="feature-api"
-```
-
-### **3. Show and Display Plans**
-```bash
-dev_plan_show plan_file="my-api-project.devplan"
-dev_plan_show plan_file=".cursorplans/project.devplan"
-dev_plan_show
-```
-
-**Parameters:**
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `plan_file` | string | ❌ No | `./project.devplan` | Path to .devplan file (looks in `.cursorplans/` first) |
-
-### **4. Analyze Current State**
-```bash
-dev_state_show directory="."
-dev_state_show directory="./src"
-dev_state_show directory="/path/to/project"
-```
-
-**Parameters:**
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `directory` | string | ❌ No | `.` | Directory to analyze (current directory) |
-
-### **5. Compare States**
-```bash
-dev_state_diff plan_file="my-api-project.devplan"
-dev_state_diff plan_file=".cursorplans/project.devplan"
-dev_state_diff
-```
-
-**Parameters:**
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `plan_file` | string | ❌ No | `./project.devplan` | Path to .devplan file (looks in `.cursorplans/` first) |
-
-### **6. Validate Plans**
-```bash
-dev_plan_validate plan_file="my-api-project.devplan"
-dev_plan_validate plan_file="my-api-project.devplan" strict_mode=true
-dev_plan_validate plan_file="my-api-project.devplan" check_cursor_rules=false
-dev_plan_validate
+plan_validate plan_file="my-project.devplan"
+plan_validate plan_file="my-project.devplan" strict_mode=true
+plan_validate plan_file="my-project.devplan" check_cursor_rules=false
+plan_validate
 ```
 
 **Parameters:**
@@ -200,11 +148,10 @@ dev_plan_validate
 | `strict_mode` | boolean | ❌ No | `false` | If true, warnings are treated as errors |
 | `check_cursor_rules` | boolean | ❌ No | `true` | If true, validate against `.cursorrules` file |
 
-### **7. Execute Plans**
+### **4. Execute Plans**
 ```bash
-dev_apply_plan plan_file="my-api-project.devplan" dry_run=true
-dev_apply_plan plan_file="my-api-project.devplan"
-dev_apply_plan
+plan_apply plan_file="my-project.devplan" dry_run=true
+plan_apply plan_file="my-project.devplan"
 ```
 
 **Parameters:**
@@ -213,29 +160,17 @@ dev_apply_plan
 | `plan_file` | string | ❌ No | `./project.devplan` | Path to .devplan file (looks in `.cursorplans/` first) |
 | `dry_run` | boolean | ❌ No | `false` | Show what would be executed without making changes |
 
-### **8. Manage Snapshots**
+### **5. Context Management**
 ```bash
-dev_snapshots
-dev_rollback snapshot_id="snapshot-20250823-123456-abc123"
+# Note: Snapshot management tools are currently being refactored
+# For now, use the core planning tools above
 ```
 
-**Parameters:**
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `snapshot_id` | string | ✅ Yes | - | ID of the snapshot to rollback to |
-
-### **9. Context Management**
+### **5. Context Management**
 ```bash
-dev_context_list directory="."
-dev_context_add files=["src/models.py", "controllers/"] context="story-123"
+# Note: Context management tools are currently being refactored
+# For now, use the core planning tools above
 ```
-
-**Parameters:**
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `files` | array | ✅ Yes | - | List of files/directories to add to context |
-| `context` | string | ❌ No | `main` | Context identifier (creates `context-{name}.txt`) |
-| `description` | string | ❌ No | `""` | Optional description of the context |
 
 ## **Key Benefits**
 
@@ -251,7 +186,7 @@ dev_context_add files=["src/models.py", "controllers/"] context="story-123"
 ### **1. Start with Initialization**
 Always begin new projects by initializing development planning:
 ```bash
-dev_plan_init project_directory="/path/to/your/project"
+plan_init context="project-context.yaml" project_directory="/path/to/your/project"
 ```
 
 ### **2. Working with Existing Codebases**
@@ -269,34 +204,28 @@ README.md
 
 Then create a plan:
 ```bash
-dev_plan_create name="my-api" template="fastapi"
-# Automatically uses context.txt if available
+plan_init context="api-context.yaml" name="my-api" template="fastapi"
+# Uses the specified context file
 ```
 
 #### **Method 2: Story-Specific Context**
-Add specific files to context for targeted planning:
+Use story-specific context files for targeted planning:
 ```bash
-# Add authentication files to context
-dev_context_add files["src/auth.py", "src/models.py"] context="story-123"
-
-# Create plan using that context
-dev_plan_create name="auth-feature" template="fastapi" context="story-123"
+# Create plan using story-specific context
+plan_init context="story-123-context.yaml" name="auth-feature" template="fastapi"
 ```
 
 #### **Method 3: Analyze Current State**
-Use the state analysis tools to understand your codebase:
+Use the initialization tool to understand your codebase:
 ```bash
-# Show current project structure
-dev_state_show
-
-# List files with context
-dev_context_list include_content=true
+# Initialize and analyze current project structure
+plan_init context="project-context.yaml" project_directory="/path/to/your/project"
 ```
 
 ### **3. Check State Regularly**
 Monitor your progress against the plan:
 ```bash
-dev_state_diff plan_file="my-project.devplan"
+plan_validate plan_file="my-project.devplan"
 ```
 
 ### **4. Use Natural Language**
@@ -314,7 +243,7 @@ Update your plans as requirements change - they're living documents.
 ### **7. Use Reset When Needed**
 When starting over or changing direction:
 ```bash
-dev_plan_init project_directory="/path/to/your/project" reset=true
+plan_init context="project-context.yaml" project_directory="/path/to/your/project" reset=true
 ```
 
 ## **Template Implementation Status**
@@ -357,7 +286,7 @@ dev_plan_init project_directory="/path/to/your/project" reset=true
 - Check for hidden files that might be ignored
 
 ### **Project Directory Issues**
-- Use `dev_plan_init` to set up project context
+- Use `plan_init` to set up project context and create plans
 - The `project_directory` parameter is automatically remembered after initialization
 - Use `reset=true` to clear context and start over
 

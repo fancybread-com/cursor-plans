@@ -74,13 +74,13 @@ python -m cursor_plans_mcp.server --help
 ### 4. Run a Quick Test
 
 ```bash
-# Create a test plan
+# Test the initialization
 python3 -c "
 import asyncio
-from cursor_plans_mcp.server import create_dev_plan
+from cursor_plans_mcp.server import init_dev_planning
 
 async def test():
-    result = await create_dev_plan({'name': 'test-project', 'template': 'basic'})
+    result = await init_dev_planning({'context': 'test-context.yaml', 'project_directory': '.'})
     print(result[0].text)
 
 asyncio.run(test())
@@ -108,10 +108,10 @@ Add to your Cursor MCP configuration:
 
 Once configured, you'll have access to these tools in Cursor:
 
-- `dev_plan_create` - Create new development plans
-- `dev_plan_show` - Display existing plans
-- `dev_state_show` - Analyze current codebase state
-- `dev_state_diff` - Compare current vs target state
+- `plan_init` - Initialize development planning and load project context
+- `plan_prepare` - Create development plans from templates
+- `plan_validate` - Validate plan syntax, logic, and compliance
+- `plan_apply` - Execute development plans (with dry-run support)
 
 ## Troubleshooting
 
@@ -138,9 +138,9 @@ python3 --version
 
 ## Next Steps
 
-1. Create your first development plan: `dev_plan_create name="my-project"`
-2. Analyze your current codebase: `dev_state_show`
-3. Compare states: `dev_state_diff`
+1. Initialize development planning: `plan_init context="project-context.yaml" project_directory="/path/to/your/project"`
+2. Prepare your first plan: `plan_prepare name="my-project" template="basic"`
+3. Validate the plan: `plan_validate plan_file="my-project.devplan"`
 4. Explore the generated `.devplan` files
 
 ## Development

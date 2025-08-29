@@ -224,3 +224,6 @@ context-*.txt
 test-*.devplan
 execution-test.devplan
 validation-test.devplan
+
+#VSCode
+.vscode/
