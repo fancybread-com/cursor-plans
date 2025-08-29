@@ -2,10 +2,10 @@
 Logic validation for development plans.
 """
 
-import os
-from typing import Dict, Any, Set, List
-from .base import BaseValidator
+from typing import Any, Dict, List, Set
+
 from ..results import ValidationResult
+from .base import BaseValidator
 
 
 class LogicValidator(BaseValidator):
@@ -15,23 +15,31 @@ class LogicValidator(BaseValidator):
     def name(self) -> str:
         return "Logic validation"
 
-    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
+    async def validate(
+        self, plan_data: Dict[str, Any], plan_file_path: str
+    ) -> ValidationResult:
         result = ValidationResult()
 
         # Validate phase dependencies
         if "phases" in plan_data:
-            self._validate_phase_dependencies(plan_data["phases"], plan_file_path, result)
+            self._validate_phase_dependencies(
+                plan_data["phases"], plan_file_path, result
+            )
 
         # Validate resource conflicts
         if "resources" in plan_data:
-            self._validate_resource_conflicts(plan_data["resources"], plan_file_path, result)
+            self._validate_resource_conflicts(
+                plan_data["resources"], plan_file_path, result
+            )
 
         # Validate template compatibility
         self._validate_template_compatibility(plan_data, plan_file_path, result)
 
         return result
 
-    def _validate_phase_dependencies(self, phases: Dict[str, Any], plan_file_path: str, result: ValidationResult):
+    def _validate_phase_dependencies(
+        self, phases: Dict[str, Any], plan_file_path: str, result: ValidationResult
+    ):
         """Check for circular dependencies and invalid phase references."""
         if not isinstance(phases, dict):
             return
@@ -57,7 +65,7 @@ class LogicValidator(BaseValidator):
                     result.add_error(
                         f"Phase '{phase_name}' depends on unknown phase '{dep}'",
                         f"phases.{phase_name}.dependencies in {plan_file_path}",
-                        f"Remove '{dep}' or add it as a phase"
+                        f"Remove '{dep}' or add it as a phase",
                     )
 
         # Check for circular dependencies using DFS
@@ -83,11 +91,13 @@ class LogicValidator(BaseValidator):
                     result.add_error(
                         f"Circular dependency detected involving phase '{phase_name}'",
                         f"phases section in {plan_file_path}",
-                        "Review phase dependencies to remove circular references"
+                        "Review phase dependencies to remove circular references",
                     )
                     break  # Only report first cycle found
 
-    def _validate_resource_conflicts(self, resources: Dict[str, Any], plan_file_path: str, result: ValidationResult):
+    def _validate_resource_conflicts(
+        self, resources: Dict[str, Any], plan_file_path: str, result: ValidationResult
+    ):
         """Check for conflicting file paths and resource definitions."""
         if not isinstance(resources, dict) or "files" not in resources:
             return
@@ -108,7 +118,7 @@ class LogicValidator(BaseValidator):
                 result.add_error(
                     f"Duplicate file path '{path}' found",
                     f"resources.files[{i}] and resources.files[{file_paths[path]}] in {plan_file_path}",
-                    "Each file path should be unique across all resources"
+                    "Each file path should be unique across all resources",
                 )
             else:
                 file_paths[path] = i
@@ -116,14 +126,18 @@ class LogicValidator(BaseValidator):
             # Check for path conflicts (parent/child relationships)
             for existing_path in file_paths.keys():
                 if path != existing_path:
-                    if path.startswith(existing_path + "/") or existing_path.startswith(path + "/"):
+                    if path.startswith(existing_path + "/") or existing_path.startswith(
+                        path + "/"
+                    ):
                         result.add_warning(
                             f"Potential path conflict: '{path}' and '{existing_path}'",
                             f"resources.files in {plan_file_path}",
-                            "Ensure file and directory paths don't conflict"
+                            "Ensure file and directory paths don't conflict",
                         )
 
-    def _validate_template_compatibility(self, plan_data: Dict[str, Any], plan_file_path: str, result: ValidationResult):
+    def _validate_template_compatibility(
+        self, plan_data: Dict[str, Any], plan_file_path: str, result: ValidationResult
+    ):
         """Validate template references and compatibility with target architecture."""
         # Get target architecture
         target_arch = {}
@@ -140,9 +154,17 @@ class LogicValidator(BaseValidator):
             if "files" in plan_data["resources"]:
                 files = plan_data["resources"]["files"]
                 if isinstance(files, list):
-                    self._check_template_references(files, target_arch, plan_file_path, result)
+                    self._check_template_references(
+                        files, target_arch, plan_file_path, result
+                    )
 
-    def _check_template_references(self, files: List[Any], target_arch: Dict[str, str], plan_file_path: str, result: ValidationResult):
+    def _check_template_references(
+        self,
+        files: List[Any],
+        target_arch: Dict[str, str],
+        plan_file_path: str,
+        result: ValidationResult,
+    ):
         """Check template references against available templates."""
         # Known templates and their requirements
         template_requirements = {
@@ -161,11 +183,13 @@ class LogicValidator(BaseValidator):
             template = file_resource["template"]
 
             # Check if template exists (basic check)
-            if template not in template_requirements and not template.startswith("custom_"):
+            if template not in template_requirements and not template.startswith(
+                "custom_"
+            ):
                 result.add_warning(
                     f"Unknown template '{template}' referenced",
                     f"resources.files[{i}].template in {plan_file_path}",
-                    f"Verify template exists or use 'custom_{template}' for custom templates"
+                    f"Verify template exists or use 'custom_{template}' for custom templates",
                 )
                 continue
 
@@ -175,9 +199,15 @@ class LogicValidator(BaseValidator):
 
                 for req_key, req_value in requirements.items():
                     target_value = target_arch.get(req_key, "").lower()
-                    if req_value.lower() not in target_value and target_value not in req_value.lower():
+                    if (
+                        req_value.lower() not in target_value
+                        and target_value not in req_value.lower()
+                    ):
                         result.add_warning(
-                            f"Template '{template}' may not be compatible with target {req_key}: {target_arch.get(req_key, 'not specified')}",
+                            (
+                                f"Template '{template}' may not be compatible with target {req_key}: "
+                                f"{target_arch.get(req_key, 'not specified')}"
+                            ),
                             f"resources.files[{i}].template in {plan_file_path}",
-                            f"Consider using a template compatible with {req_key}: {target_arch.get(req_key)}"
+                            f"Consider using a template compatible with {req_key}: {target_arch.get(req_key)}",
                         )

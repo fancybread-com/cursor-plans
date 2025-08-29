@@ -2,14 +2,17 @@
 Schema validation using Pydantic models.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, ValidationError
-from .base import BaseValidator
+
 from ..results import ValidationResult
+from .base import BaseValidator
 
 
 class ProjectConfig(BaseModel):
     """Project configuration schema."""
+
     name: str
     version: str
     description: Optional[str] = None
@@ -17,12 +20,14 @@ class ProjectConfig(BaseModel):
 
 class TargetState(BaseModel):
     """Target state schema."""
+
     architecture: Optional[List[Dict[str, str]]] = None
     features: Optional[List[str]] = None
 
 
 class FileResource(BaseModel):
     """File resource schema."""
+
     path: str
     type: str
     template: Optional[str] = None
@@ -31,12 +36,14 @@ class FileResource(BaseModel):
 
 class Resources(BaseModel):
     """Resources schema."""
+
     files: Optional[List[FileResource]] = None
     dependencies: Optional[List[str]] = None
 
 
 class Phase(BaseModel):
     """Phase schema."""
+
     priority: int
     description: Optional[str] = None
     tasks: Optional[List[str]] = None
@@ -45,6 +52,7 @@ class Phase(BaseModel):
 
 class DevPlanSchema(BaseModel):
     """Complete development plan schema."""
+
     project: ProjectConfig
     target_state: TargetState
     resources: Resources
@@ -58,7 +66,9 @@ class SchemaValidator(BaseValidator):
     def name(self) -> str:
         return "Schema validation"
 
-    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
+    async def validate(
+        self, plan_data: Dict[str, Any], plan_file_path: str
+    ) -> ValidationResult:
         result = ValidationResult()
 
         try:
@@ -77,7 +87,7 @@ class SchemaValidator(BaseValidator):
                 result.add_error(
                     f"Schema validation failed: {message}",
                     f"{location} in {plan_file_path}",
-                    suggestion
+                    suggestion,
                 )
 
         # Additional schema-level validations
@@ -101,7 +111,9 @@ class SchemaValidator(BaseValidator):
 
         return suggestions.get(error_type, "Check the field type and format")
 
-    def _validate_phase_priorities(self, phases: Dict[str, Any], plan_file_path: str, result: ValidationResult):
+    def _validate_phase_priorities(
+        self, phases: Dict[str, Any], plan_file_path: str, result: ValidationResult
+    ):
         """Validate phase priorities are logical."""
         priorities = []
 
@@ -114,11 +126,13 @@ class SchemaValidator(BaseValidator):
         # Check for duplicate priorities
         priority_values = [p[1] for p in priorities]
         if len(priority_values) != len(set(priority_values)):
-            duplicates = [p for p in set(priority_values) if priority_values.count(p) > 1]
+            duplicates = [
+                p for p in set(priority_values) if priority_values.count(p) > 1
+            ]
             result.add_error(
                 f"Duplicate phase priorities found: {duplicates}",
                 f"phases section in {plan_file_path}",
-                "Each phase should have a unique priority number (1, 2, 3, ...)"
+                "Each phase should have a unique priority number (1, 2, 3, ...)",
             )
 
         # Check for gaps in priorities (optional warning)
@@ -129,5 +143,5 @@ class SchemaValidator(BaseValidator):
                 result.add_warning(
                     f"Phase priorities have gaps: {sorted_priorities}",
                     f"phases section in {plan_file_path}",
-                    f"Consider using consecutive priorities: {expected}"
+                    f"Consider using consecutive priorities: {expected}",
                 )

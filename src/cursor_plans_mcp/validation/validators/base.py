@@ -3,7 +3,8 @@ Base validator class for all validation implementations.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any, Dict
+
 from ..results import ValidationResult
 
 
@@ -17,7 +18,9 @@ class BaseValidator(ABC):
         pass
 
     @abstractmethod
-    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
+    async def validate(
+        self, plan_data: Dict[str, Any], plan_file_path: str
+    ) -> ValidationResult:
         """
         Validate the development plan.
 
