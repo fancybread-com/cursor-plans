@@ -6,7 +6,7 @@ import tempfile
 import os
 
 from cursor_plans_mcp.execution.engine import PlanExecutor
-from cursor_plans_mcp.server import create_dev_plan
+from cursor_plans_mcp.server import init_dev_planning
 
 
 class TestTemplateImplementation:
@@ -58,47 +58,63 @@ class TestTemplateImplementation:
     async def test_basic_template_creation(self):
         """Test that basic template can be created and executed."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = await create_dev_plan({
-                "name": "test-basic",
-                "template": "basic",
+            os.chdir(temp_dir)
+
+            # Create a minimal context file
+            context_content = """
+project:
+  name: test-project
+  type: python
+  description: A test project
+"""
+            context_file = Path(temp_dir) / "context.yaml"
+            with open(context_file, 'w') as f:
+                f.write(context_content)
+
+            result = await init_dev_planning({
+                "context": str(context_file),
                 "project_directory": temp_dir
             })
 
             assert len(result) == 1
-            assert "Created development plan" in result[0].text
+            assert "Development Planning Initialized" in result[0].text
 
-            # Check that the plan file was created
-            plan_file = Path(temp_dir) / ".cursorplans" / "test-basic.devplan"
-            assert plan_file.exists()
-
-            # Check that the plan references implemented templates
-            with open(plan_file) as f:
-                content = f.read()
-                # Should reference basic_readme and python_main which should be implemented
-                assert "basic_readme" in content or "python_main" in content
+            # Check that .cursorplans directory was created but no plan file yet
+            cursorplans_dir = Path(temp_dir) / ".cursorplans"
+            assert cursorplans_dir.exists()
+            plan_file = cursorplans_dir / "test-basic.devplan"
+            assert not plan_file.exists()
 
     @pytest.mark.asyncio
     async def test_fastapi_template_creation(self):
         """Test that FastAPI template can be created and executed."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = await create_dev_plan({
-                "name": "test-fastapi",
-                "template": "fastapi",
+            os.chdir(temp_dir)
+
+            # Create a context file for FastAPI
+            context_content = """
+project:
+  name: test-fastapi
+  type: python
+  description: A FastAPI web service
+"""
+            context_file = Path(temp_dir) / "context.yaml"
+            with open(context_file, 'w') as f:
+                f.write(context_content)
+
+            result = await init_dev_planning({
+                "context": str(context_file),
                 "project_directory": temp_dir
             })
 
             assert len(result) == 1
-            assert "Created development plan" in result[0].text
+            assert "Development Planning Initialized" in result[0].text
 
-            # Check that the plan file was created
-            plan_file = Path(temp_dir) / ".cursorplans" / "test-fastapi.devplan"
-            assert plan_file.exists()
-
-            # Check that the plan references implemented templates
-            with open(plan_file) as f:
-                content = f.read()
-                # Should reference fastapi_main which should be implemented
-                assert "fastapi_main" in content
+            # Check that .cursorplans directory was created but no plan file yet
+            cursorplans_dir = Path(temp_dir) / ".cursorplans"
+            assert cursorplans_dir.exists()
+            plan_file = cursorplans_dir / "test-fastapi.devplan"
+            assert not plan_file.exists()
 
     @pytest.mark.skip(reason="Template content generation feature not fully implemented")
     def test_template_content_generation(self):

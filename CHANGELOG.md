@@ -18,16 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration with Cursor IDE via MCP protocol
 
 ### Features
-- `dev_plan_create` - Create development plans from templates
-- `dev_plan_validate` - Validate plan syntax, logic, and compliance
-- `dev_plan_show` - Display existing development plans
-- `dev_state_show` - Analyze current codebase state
-- `dev_state_diff` - Compare current vs target state
-- `dev_apply_plan` - Execute development plans (with dry-run support)
-- `dev_rollback` - Rollback to previous state snapshots
-- `dev_snapshots` - List available state snapshots
-- `dev_context_list` - Analyze project context
-- `dev_context_add` - Add files to development context
+- `plan_init` - Initialize development planning and load project context
+- `plan_prepare` - Create development plans from templates
+- `plan_validate` - Validate plan syntax, logic, and compliance
+- `plan_apply` - Execute development plans (with dry-run support)
+- 4-phase development workflow (init → prepare → validate → apply)
+- Template system with 9 fully implemented templates
+- Context-aware project directory handling
 
 ### Technical
 - Modern Python project structure with src layout
@@ -62,18 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **0.1.0** - Initial alpha release with core functionality
 - **Unreleased** - Development version with latest features
 
-## Migration Guide
 
-### From cursor-plans-mcp to cursor-plans
-
-The project has been renamed and restructured:
-
-1. **Repository**: `cursor-plans-mcp` → `cursor-plans`
-2. **Structure**: Root-level package → `src/` layout
-3. **Installation**: `pip install -e .` (same command)
-4. **Usage**: `python -m cursor_plans_mcp.server` (same command)
-
-No breaking changes to the API or functionality.
 
 ---
 

@@ -5,38 +5,127 @@ Integration tests for MCP tools.
 import pytest
 import os
 import yaml
+from pathlib import Path
 from unittest.mock import patch
 from cursor_plans_mcp.server import (
-    create_dev_plan,
-    show_dev_plan,
+    init_dev_planning,
+    prepare_dev_plan,
     validate_dev_plan,
-    show_current_state,
-    show_state_diff,
-    list_project_context,
-    add_context_files,
-    apply_dev_plan,
-    rollback_to_snapshot,
-    list_snapshots
+    apply_dev_plan
 )
 
 
-class TestDevPlanCreate:
-    """Test the dev_plan_create MCP tool."""
+class TestPlanInit:
+    """Test the plan_init MCP tool."""
 
     @pytest.mark.asyncio
-    async def test_create_basic_plan(self, temp_dir):
-        """Test creating a basic development plan."""
+    async def test_init_basic_project(self, temp_dir):
+        """Test initializing a basic project."""
         os.chdir(temp_dir)
+        # Create a minimal context file
+        context_content = """
+project:
+  name: test-project
+  type: python
+  description: A test project
+"""
+        context_file = temp_dir / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
 
-        result = await create_dev_plan({
-            "name": "test-project",
-            "template": "basic",
-            "context": "",
+        result = await init_dev_planning({
+            "context": str(context_file),
             "project_directory": str(temp_dir)
         })
 
         assert len(result) == 1
-        assert "Created development plan" in result[0].text
+        assert "Development Planning Initialized" in result[0].text
+        assert "Ready to create development plans" in result[0].text
+
+        # Check that .cursorplans directory was created but no plan file yet
+        cursorplans_dir = temp_dir / ".cursorplans"
+        assert cursorplans_dir.exists()
+        plan_file = cursorplans_dir / "test-project.devplan"
+        assert not plan_file.exists()
+
+    @pytest.mark.asyncio
+    async def test_init_fastapi_plan(self, temp_dir):
+        """Test initializing and creating a FastAPI development plan."""
+        os.chdir(temp_dir)
+
+        # Create a context file for FastAPI
+        context_content = """
+project:
+  name: api-project
+  type: python
+  description: A FastAPI web service
+"""
+        context_file = Path(temp_dir) / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
+
+        result = await init_dev_planning({
+            "context": str(context_file),
+            "project_directory": str(temp_dir)
+        })
+
+        assert len(result) == 1
+        assert "Development Planning Initialized" in result[0].text
+        assert "Ready to create development plans" in result[0].text
+
+        # Check that .cursorplans directory was created but no plan file yet
+        cursorplans_dir = Path(temp_dir) / ".cursorplans"
+        assert cursorplans_dir.exists()
+        plan_file = cursorplans_dir / "api-project.devplan"
+        assert not plan_file.exists()
+
+    @pytest.mark.asyncio
+    async def test_init_with_context(self, temp_dir, sample_context_file):
+        """Test initializing with context file."""
+        os.chdir(temp_dir)
+
+        result = await init_dev_planning({
+            "context": str(sample_context_file),
+            "project_directory": str(temp_dir)
+        })
+
+        assert len(result) == 1
+        assert "Development Planning Initialized" in result[0].text
+
+
+class TestPlanPrepare:
+    """Test the plan_prepare MCP tool."""
+
+    @pytest.mark.asyncio
+    async def test_prepare_basic_plan(self, temp_dir):
+        """Test preparing a basic development plan."""
+        os.chdir(temp_dir)
+
+        # First initialize the project
+        context_content = """
+project:
+  name: test-project
+  type: python
+  description: A test project
+"""
+        context_file = temp_dir / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
+
+        # Initialize first
+        await init_dev_planning({
+            "context": str(context_file),
+            "project_directory": str(temp_dir)
+        })
+
+        # Now prepare the plan
+        result = await prepare_dev_plan({
+            "name": "test-project",
+            "template": "basic"
+        })
+
+        assert len(result) == 1
+        assert "Development Plan Created" in result[0].text
 
         # Check that plan file was created
         plan_file = temp_dir / ".cursorplans" / "test-project.devplan"
@@ -52,83 +141,67 @@ class TestDevPlanCreate:
         assert "phases" in plan_data
 
     @pytest.mark.asyncio
-    async def test_create_fastapi_plan(self, temp_dir):
-        """Test creating a FastAPI development plan."""
+    async def test_prepare_fastapi_plan(self, temp_dir):
+        """Test preparing a FastAPI development plan."""
         os.chdir(temp_dir)
 
-        result = await create_dev_plan({
-            "name": "api-project",
-            "template": "fastapi",
-            "context": "",
+        # First initialize the project
+        context_content = """
+project:
+  name: api-project
+  type: python
+  description: A FastAPI web service
+"""
+        context_file = temp_dir / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
+
+        # Initialize first
+        await init_dev_planning({
+            "context": str(context_file),
             "project_directory": str(temp_dir)
         })
 
+        # Now prepare the plan
+        result = await prepare_dev_plan({
+            "name": "api-project",
+            "template": "fastapi"
+        })
+
         assert len(result) == 1
-        assert "Created development plan" in result[0].text
+        assert "Development Plan Created" in result[0].text
 
         # Check FastAPI-specific content
         plan_file = temp_dir / ".cursorplans" / "api-project.devplan"
         with open(plan_file) as f:
             plan_data = yaml.safe_load(f)
 
-        # Should have FastAPI-specific elements
-        architecture = plan_data["target_state"]["architecture"]
+        # Check for FastAPI-specific features
+        target_state = plan_data.get("target_state", {})
+        architecture = target_state.get("architecture", [])
+        features = target_state.get("features", [])
+
         assert any("FastAPI" in str(item) for item in architecture)
-
-        # Should have multiple phases
-        phases = plan_data["phases"]
-        assert len(phases) >= 3
-        assert "foundation" in phases
-        assert "security" in phases
+        assert "api_endpoints" in features
+        assert "database_models" in features
 
     @pytest.mark.asyncio
-    async def test_create_with_context(self, temp_dir, sample_context_file):
-        """Test creating a plan with context file."""
+    async def test_prepare_without_init(self, temp_dir):
+        """Test preparing a plan without initializing first."""
         os.chdir(temp_dir)
 
-        result = await create_dev_plan({
-            "name": "context-project",
-            "template": "basic",
-            "context": "",  # Will use default context.txt
-            "project_directory": str(temp_dir)
+        result = await prepare_dev_plan({
+            "name": "test-project",
+            "template": "basic"
         })
 
         assert len(result) == 1
-        assert "Context files included" in result[0].text or "Created development plan" in result[0].text
+        assert "No project context found" in result[0].text
+        assert "Please run plan_init first" in result[0].text
 
 
-class TestDevPlanShow:
-    """Test the dev_plan_show MCP tool."""
-
-    @pytest.mark.asyncio
-    async def test_show_existing_plan(self, sample_plan_file, temp_dir):
-        """Test showing an existing plan."""
-        os.chdir(temp_dir)
-
-        result = await show_dev_plan({
-            "plan_file": str(sample_plan_file)
-        })
-
-        assert len(result) == 1
-        assert "Development Plan" in result[0].text
-        assert "test-project" in result[0].text
-        assert "```yaml" in result[0].text
-
-    @pytest.mark.asyncio
-    async def test_show_nonexistent_plan(self, temp_dir):
-        """Test showing a non-existent plan."""
-        os.chdir(temp_dir)
-
-        result = await show_dev_plan({
-            "plan_file": "nonexistent.devplan"
-        })
-
-        assert len(result) == 1
-        assert "Plan file not found" in result[0].text
-
-
-class TestDevPlanValidate:
-    """Test the dev_plan_validate MCP tool."""
+class TestPlanValidate:
+    """Test the plan_validate MCP tool."""
 
     @pytest.mark.asyncio
     async def test_validate_valid_plan(self, sample_plan_file, temp_dir):
@@ -201,173 +274,38 @@ class TestDevPlanValidate:
         assert len(strict_result) == 1
 
 
-class TestDevStateShow:
-    """Test the dev_state_show MCP tool."""
-
-    @pytest.mark.asyncio
-    async def test_show_state_existing_directory(self, temp_dir, mock_existing_files):
-        """Test showing state of existing directory."""
-        os.chdir(temp_dir)
-
-        result = await show_current_state({
-            "directory": "."
-        })
-
-        assert len(result) == 1
-        result_text = result[0].text
-        assert "Current Codebase State" in result_text
-        assert "Total Files" in result_text
-
-        # Should list some of the mock files
-        assert any(f.name in result_text for f in mock_existing_files)
-
-    @pytest.mark.asyncio
-    async def test_show_state_nonexistent_directory(self, temp_dir):
-        """Test showing state of non-existent directory."""
-        os.chdir(temp_dir)
-
-        result = await show_current_state({
-            "directory": "nonexistent"
-        })
-
-        assert len(result) == 1
-        assert "Directory not found" in result[0].text
 
 
-class TestDevStateDiff:
-    """Test the dev_state_diff MCP tool."""
-
-    @pytest.mark.asyncio
-    async def test_diff_with_existing_plan(self, sample_plan_file, temp_dir):
-        """Test state diff with existing plan."""
-        os.chdir(temp_dir)
-
-        result = await show_state_diff({
-            "plan_file": str(sample_plan_file)
-        })
-
-        assert len(result) == 1
-        result_text = result[0].text
-        assert "State Difference Analysis" in result_text or "diff" in result_text.lower()
-
-    @pytest.mark.asyncio
-    async def test_diff_nonexistent_plan(self, temp_dir):
-        """Test state diff with non-existent plan."""
-        os.chdir(temp_dir)
-
-        result = await show_state_diff({
-            "plan_file": "nonexistent.devplan"
-        })
-
-        assert len(result) == 1
-        assert "Plan file not found" in result[0].text
 
 
-class TestDevContextList:
-    """Test the dev_context_list MCP tool."""
-
-    @pytest.mark.asyncio
-    async def test_list_context_existing_directory(self, temp_dir, mock_existing_files):
-        """Test listing context for existing directory."""
-        os.chdir(temp_dir)
-
-        result = await list_project_context({
-            "directory": ".",
-            "include_content": False,
-            "max_depth": 3
-        })
-
-        assert len(result) == 1
-        result_text = result[0].text
-        assert "Project Context Analysis" in result_text
-
-        # Should detect some project structure
-        assert any(f.name in result_text for f in mock_existing_files)
-
-    @pytest.mark.asyncio
-    async def test_list_context_with_content(self, temp_dir, mock_existing_files):
-        """Test listing context with content previews."""
-        os.chdir(temp_dir)
-
-        result = await list_project_context({
-            "directory": ".",
-            "include_content": True,
-            "max_depth": 2
-        })
-
-        assert len(result) == 1
-        result_text = result[0].text
-        assert "Project Context Analysis" in result_text
-
-        # When include_content is True, should show file previews
-        if "File Previews" in result_text:
-            assert "Sample content" in result_text or "```" in result_text
 
 
-class TestDevContextAdd:
-    """Test the dev_context_add MCP tool."""
-
-    @pytest.mark.asyncio
-    async def test_add_context_files(self, temp_dir, mock_existing_files):
-        """Test adding files to context."""
-        os.chdir(temp_dir)
-
-        # Add some files to context
-        files_to_add = [f.name for f in mock_existing_files[:3]]
-
-        result = await add_context_files({
-            "files": files_to_add,
-            "context": "main",
-            "description": "Test context"
-        })
-
-        assert len(result) == 1
-        result_text = result[0].text
-        assert "Added" in result_text or "Updated" in result_text
-
-        # Check that context file was created
-        context_file = temp_dir / "context.txt"
-        assert context_file.exists()
-
-        # Verify content
-        context_content = context_file.read_text()
-        assert all(file_name in context_content for file_name in files_to_add[:2])  # At least some files
-
-    @pytest.mark.asyncio
-    async def test_add_context_with_story_name(self, temp_dir, mock_existing_files):
-        """Test adding files to story-specific context."""
-        os.chdir(temp_dir)
-
-        result = await add_context_files({
-            "files": ["src/main.py"],
-            "context": "story-123",
-            "description": "Story 123 context"
-        })
-
-        assert len(result) == 1
-
-        # Check that story-specific context file was created
-        context_file = temp_dir / "context-story-123.txt"
-        assert context_file.exists()
-
-        context_content = context_file.read_text()
-        assert "src/main.py" in context_content
-        assert "Story 123 context" in context_content
 
 
 class TestErrorHandling:
     """Test error handling in MCP tools."""
 
     @pytest.mark.asyncio
-    async def test_create_plan_invalid_template(self, temp_dir):
-        """Test creating plan with invalid template."""
-        os.chdir(temp_dir)
+    async def test_init_plan_invalid_template(self, temp_dir):
+        """Test initializing plan with invalid template."""
+        os.chdir(temp_dir)        # Create a minimal context file
+        context_content = """
+project:
+  name: test-project
+  type: python
+  description: A test project
+"""
+        context_file = temp_dir / "context.yaml"
 
-        # This should not crash, but might create a basic plan or show an error
-        result = await create_dev_plan({
+        with open(context_file, 'w') as f:
+            f.write(context_content)
+
+
+        result = await init_dev_planning({
+            "context": str(context_file),
             "name": "test-project",
             "template": "invalid_template",
-            "context": ""
+            "project_directory": str(temp_dir)
         })
 
         assert len(result) == 1
@@ -425,37 +363,4 @@ class TestExecutionTools:
         assert result[0].type == "text"
         assert "error" in result[0].text.lower()
 
-    @pytest.mark.asyncio
-    async def test_dev_rollback_no_snapshot_id(self, temp_dir):
-        """Test dev_rollback tool without snapshot ID."""
-        os.chdir(temp_dir)
 
-        result = await rollback_to_snapshot({})
-
-        assert len(result) == 1
-        assert result[0].type == "text"
-        assert "No snapshot ID provided" in result[0].text
-
-    @pytest.mark.asyncio
-    async def test_dev_rollback_with_snapshot_id(self, temp_dir):
-        """Test dev_rollback tool with snapshot ID."""
-        os.chdir(temp_dir)
-
-        result = await rollback_to_snapshot({
-            'snapshot_id': 'test-snapshot'
-        })
-
-        assert len(result) == 1
-        assert result[0].type == "text"
-        # Should show rollback result (success or failure)
-
-    @pytest.mark.asyncio
-    async def test_dev_snapshots(self, temp_dir):
-        """Test dev_snapshots tool."""
-        os.chdir(temp_dir)
-
-        result = await list_snapshots({})
-
-        assert len(result) == 1
-        assert result[0].type == "text"
-        # Should show snapshots list (empty or with data)

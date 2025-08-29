@@ -31,10 +31,10 @@ Cursor Plans MCP brings Infrastructure-as-Code principles to application develop
 
 ```bash
 # Initialize development planning for your project:
-dev_plan_init project_directory="/path/to/your/project"
+plan_init project_directory="/path/to/your/project"
 
 # Start over (purge all plans and reset context):
-dev_plan_init project_directory="/path/to/your/project" reset=true
+plan_init project_directory="/path/to/your/project" reset=true
 ```
 
 This tool:
@@ -44,77 +44,64 @@ This tool:
 - Shows recommended templates for your project type
 - **Reset mode**: Purges all `.devplan` files, context files, and resets project context
 
-### 1. Create a Development Plan
+### 1. Initialize Development Planning
 
 ```bash
-# In Cursor, use the MCP tool:
-dev_plan_create name="my-project" template="fastapi"
+# Initialize development planning for your project:
+plan_init context="project-context.yaml" project_directory="/path/to/your/project"
 ```
 
-**Note**: The project directory is automatically remembered from the `dev_plan_init` step, so you don't need to repeat it in every command.
+This sets up the `.cursorplans/` directory and loads your project context.
+
+### 2. Prepare a Development Plan
+
+```bash
+# Create a development plan from templates:
+plan_prepare name="my-project" template="fastapi"
+```
 
 This creates a `my-project.devplan` file with structured development goals in your project directory.
 
-### 2. Validate the Plan
+### 3. Validate the Plan
 
 ```bash
 # Validate plan quality and compliance
-dev_plan_validate plan_file="my-project.devplan"
+plan_validate plan_file="my-project.devplan"
 ```
 
-### 3. Check Current State
-
-```bash
-# Show current codebase state
-dev_state_show
-
-# Compare with plan
-dev_state_diff plan_file="my-project.devplan"
-```
-
-### 4. Execute the Plan
+### 4. Execute Plans
 
 ```bash
 # Dry run - see what would be executed
-dev_apply_plan plan_file="my-project.devplan" dry_run=true
+plan_apply plan_file="my-project.devplan" dry_run=true
 
 # Execute the plan
-dev_apply_plan plan_file="my-project.devplan"
+plan_apply plan_file="my-project.devplan"
 ```
 
 ### 5. Manage State
 
 ```bash
 # List available snapshots
-dev_snapshots
-
-# Rollback to previous state
-dev_rollback snapshot_id="snapshot-20250823-123456-abc123"
+# Note: Snapshot management tools are currently being refactored
+# For now, use the core planning tools above
 ```
 
-### 6. Review the Plan
 
-```bash
-# Display the development plan
-dev_plan_show plan_file="my-project.devplan"
-```
 
 ## Important Parameters
 
 ### project_directory
 
-**Note**: The `project_directory` parameter is automatically handled by the `dev_plan_init` tool. After initialization, you don't need to specify it in every command.
+**Note**: The `project_directory` parameter is automatically handled by the `plan_init` tool. After initialization, you don't need to specify it in every command.
 
 ```bash
-# ✅ Correct workflow
-dev_plan_init project_directory="/Users/paul/projects/my-project"
-dev_plan_create name="my-project" template="basic"
-
-# ❌ Old way (no longer needed)
-dev_plan_create name="my-project" project_directory="/Users/paul/projects/my-project"
+# ✅ New 4-phase workflow
+plan_init context="project-context.yaml" project_directory="/Users/paul/projects/my-project"
+plan_prepare name="my-project" template="basic"
 ```
 
-**Why this matters**: The `dev_plan_init` tool stores the project context, so files are always created in your project's local `.cursorplans/` directory instead of the global location.
+**Why this matters**: The `plan_init` tool stores the project context, so files are always created in your project's local `.cursorplans/` directory instead of the global location.
 
 ### Reset/Start Over
 
@@ -122,7 +109,7 @@ When you need to completely start over with development planning:
 
 ```bash
 # Purge all plans and reset context
-dev_plan_init project_directory="/path/to/your/project" reset=true
+plan_init project_directory="/path/to/your/project" reset=true
 ```
 
 This will:
@@ -185,21 +172,10 @@ For detailed template information, see [SCHEMA.md](SCHEMA.md#template-names).
 ## Available Tools
 
 ### Core Planning Tools
-- **`dev_plan_init`** - Initialize development planning for a project
-- **`dev_plan_create`** - Create development plans from templates
-- **`dev_plan_validate`** - Validate plan syntax, logic, and compliance
-- **`dev_plan_show`** - Display existing development plans
-
-### State Management Tools
-- **`dev_state_show`** - Analyze current codebase state
-- **`dev_state_diff`** - Compare current vs target state
-- **`dev_apply_plan`** - Execute development plans (with dry-run support)
-- **`dev_rollback`** - Rollback to previous state snapshots
-- **`dev_snapshots`** - List available state snapshots
-
-### Context Management Tools
-- **`dev_context_list`** - Analyze project context
-- **`dev_context_add`** - Add files to development context
+- **`plan_init`** - Initialize development planning and load project context
+- **`plan_prepare`** - Create development plans from templates
+- **`plan_validate`** - Validate plan syntax, logic, and compliance
+- **`plan_apply`** - Execute development plans to create/modify files
 
 For detailed usage examples, see [HOW-TO.md](HOW-TO.md).
 
@@ -215,10 +191,9 @@ This MCP server integrates seamlessly with Cursor, providing:
 ## Roadmap
 
 ### ✅ Completed Features
-- [x] Plan execution (`dev_apply_plan`) ✅
-- [x] Rollback system (`dev_rollback`) ✅
+- [x] 4-phase development workflow (`plan_init`, `plan_prepare`, `plan_validate`, `plan_apply`) ✅
 - [x] Validation framework ✅
-- [x] Snapshot management ✅
+- [x] Template system with 9 fully implemented templates ✅
 - [x] .NET template support ✅
 - [x] Context-aware project directory handling ✅
 - [x] Template implementation status tracking ✅

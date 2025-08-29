@@ -5,7 +5,8 @@ Tests for template generation and context handling.
 import pytest
 import os
 import yaml
-from cursor_plans_mcp.server import create_dev_plan, detect_existing_codebase
+from pathlib import Path
+from cursor_plans_mcp.server import init_dev_planning, prepare_dev_plan, detect_existing_codebase
 
 
 class TestTemplateGeneration:
@@ -14,16 +15,31 @@ class TestTemplateGeneration:
     @pytest.mark.asyncio
     async def test_basic_template(self, temp_dir):
         """Test basic template generation."""
-        os.chdir(temp_dir)
+        os.chdir(temp_dir)        # Create a minimal context file
+        context_content = """
+project:
+  name: test-project
+  type: python
+  description: A test project
+"""
+        context_file = temp_dir / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
 
-        result = await create_dev_plan({
-            "name": "basic-project",
-            "template": "basic",
-            "context": "",
+        # First initialize the project
+        await init_dev_planning({
+            "context": str(context_file),
             "project_directory": str(temp_dir)
         })
 
-        plan_file = temp_dir / ".cursorplans" / "basic-project.devplan"
+        # Then prepare the plan
+        result = await prepare_dev_plan({
+            "name": "basic-project",
+            "template": "basic"
+        })
+
+        # Check that plan file was created in temp directory
+        plan_file = Path(temp_dir) / ".cursorplans" / "basic-project.devplan"
         assert plan_file.exists()
 
         with open(plan_file) as f:
@@ -43,14 +59,29 @@ class TestTemplateGeneration:
         """Test FastAPI template generation."""
         os.chdir(temp_dir)
 
-        result = await create_dev_plan({
-            "name": "fastapi-project",
-            "template": "fastapi",
-            "context": "",
+        # First initialize the project
+        context_content = """
+project:
+  name: fastapi-project
+  type: python
+  description: A FastAPI web service
+"""
+        context_file = Path(temp_dir) / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
+
+        await init_dev_planning({
+            "context": str(context_file),
             "project_directory": str(temp_dir)
         })
 
-        plan_file = temp_dir / ".cursorplans" / "fastapi-project.devplan"
+        # Then prepare the plan
+        result = await prepare_dev_plan({
+            "name": "fastapi-project",
+            "template": "fastapi"
+        })
+
+        plan_file = Path(temp_dir) / ".cursorplans" / "fastapi-project.devplan"
         assert plan_file.exists()
 
         with open(plan_file) as f:
@@ -83,14 +114,29 @@ class TestTemplateGeneration:
         """Test .NET template generation."""
         os.chdir(temp_dir)
 
-        result = await create_dev_plan({
-            "name": "dotnet-project",
-            "template": "dotnet",
-            "context": "",
+        # First initialize the project
+        context_content = """
+project:
+  name: dotnet-project
+  type: dotnet
+  description: A .NET web service
+"""
+        context_file = Path(temp_dir) / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
+
+        await init_dev_planning({
+            "context": str(context_file),
             "project_directory": str(temp_dir)
         })
 
-        plan_file = temp_dir / ".cursorplans" / "dotnet-project.devplan"
+        # Then prepare the plan
+        result = await prepare_dev_plan({
+            "name": "dotnet-project",
+            "template": "dotnet"
+        })
+
+        plan_file = Path(temp_dir) / ".cursorplans" / "dotnet-project.devplan"
         assert plan_file.exists()
 
         with open(plan_file) as f:
@@ -113,14 +159,29 @@ class TestTemplateGeneration:
         """Test Vue.js template generation."""
         os.chdir(temp_dir)
 
-        result = await create_dev_plan({
-            "name": "vue-project",
-            "template": "vuejs",
-            "context": "",
+        # First initialize the project
+        context_content = """
+project:
+  name: vue-project
+  type: javascript
+  description: A Vue.js web application
+"""
+        context_file = Path(temp_dir) / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
+
+        await init_dev_planning({
+            "context": str(context_file),
             "project_directory": str(temp_dir)
         })
 
-        plan_file = temp_dir / ".cursorplans" / "vue-project.devplan"
+        # Then prepare the plan
+        result = await prepare_dev_plan({
+            "name": "vue-project",
+            "template": "vuejs"
+        })
+
+        plan_file = Path(temp_dir) / ".cursorplans" / "vue-project.devplan"
         assert plan_file.exists()
 
         with open(plan_file) as f:
@@ -228,14 +289,29 @@ class TestExistingCodebaseDetection:
 
         os.chdir(temp_dir)
 
-        result = await create_dev_plan({
-            "name": "detected-project",
-            "template": "fastapi",
-            "context": "",
+        # First initialize the project
+        context_content = """
+project:
+  name: detected-project
+  type: python
+  description: A detected FastAPI project
+"""
+        context_file = Path(temp_dir) / "context.yaml"
+        with open(context_file, 'w') as f:
+            f.write(context_content)
+
+        await init_dev_planning({
+            "context": str(context_file),
             "project_directory": str(temp_dir)
         })
 
-        plan_file = temp_dir / ".cursorplans" / "detected-project.devplan"
+        # Then prepare the plan
+        result = await prepare_dev_plan({
+            "name": "detected-project",
+            "template": "fastapi"
+        })
+
+        plan_file = Path(temp_dir) / ".cursorplans" / "detected-project.devplan"
         assert plan_file.exists()
 
         with open(plan_file) as f:
@@ -254,41 +330,39 @@ class TestContextHandling:
         """Test creating plan with default context file."""
         os.chdir(temp_dir)
 
-        result = await create_dev_plan({
-            "name": "context-project",
-            "template": "basic",
-            "context": "",  # Uses default context.txt
+        result = await init_dev_planning({
+            "context": str(sample_context_file),
             "project_directory": str(temp_dir)
         })
 
-        # Should mention context files if they were used
+        # Should mention initialization success
         result_text = result[0].text
-        # The exact behavior depends on implementation
-        assert "Created development plan" in result_text
+        assert "Development Planning Initialized" in result_text
 
     @pytest.mark.asyncio
     async def test_plan_with_story_context(self, temp_dir):
         """Test creating plan with story-specific context."""
         # Create story-specific context file
-        story_context = temp_dir / "context-story-456.txt"
-        story_context.write_text("src/auth.py\nsrc/users.py\ntests/test_auth.py")
+        story_context = temp_dir / "context-story-456.yaml"
+        story_context.write_text("""project:
+  name: story-project
+  type: python
+  description: A story-specific project
+""")
 
         os.chdir(temp_dir)
 
-        result = await create_dev_plan({
-            "name": "story-project",
-            "template": "basic",
-            "context": "story-456",
+        result = await init_dev_planning({
+            "context": str(story_context),
             "project_directory": str(temp_dir)
         })
 
         # Should use the story-specific context
         result_text = result[0].text
-        assert "Created development plan" in result_text
+        assert "Development Planning Initialized" in result_text
 
-        # If context was used, might mention it
-        if "context" in result_text.lower():
-            assert "Context files included" in result_text
+        # Context file should be mentioned in the output
+        assert "context-story-456.yaml" in result_text
 
     def test_load_context_file(self, temp_dir):
         """Test loading context file content."""
@@ -331,7 +405,7 @@ class TestTemplateValidation:
         os.chdir(temp_dir)
 
         # Use an invalid template name
-        result = await create_dev_plan({
+        result = await init_dev_planning({
             "name": "fallback-project",
             "template": "nonexistent-template",
             "context": "",
@@ -358,14 +432,29 @@ class TestTemplateValidation:
         templates_to_test = ["basic", "fastapi", "dotnet", "vuejs"]
 
         for template in templates_to_test:
-            result = await create_dev_plan({
-                "name": f"{template}-test",
-                "template": template,
-                "context": "",
+            # First initialize the project
+            context_content = f"""
+project:
+  name: {template}-test
+  type: python
+  description: A {template} test project
+"""
+            context_file = Path(temp_dir) / f"context-{template}.yaml"
+            with open(context_file, 'w') as f:
+                f.write(context_content)
+
+            await init_dev_planning({
+                "context": str(context_file),
                 "project_directory": str(temp_dir)
             })
 
-            plan_file = temp_dir / ".cursorplans" / f"{template}-test.devplan"
+            # Then prepare the plan
+            result = await prepare_dev_plan({
+                "name": f"{template}-test",
+                "template": template
+            })
+
+            plan_file = Path(temp_dir) / ".cursorplans" / f"{template}-test.devplan"
             assert plan_file.exists(), f"Plan file not created for template: {template}"
 
             with open(plan_file) as f:

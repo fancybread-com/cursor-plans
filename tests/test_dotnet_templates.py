@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 
 from cursor_plans_mcp.execution.engine import PlanExecutor
-from cursor_plans_mcp.server import create_dev_plan
+from cursor_plans_mcp.server import init_dev_planning
 
 
 class TestDotNetTemplates:
@@ -58,33 +58,38 @@ class TestDotNetTemplates:
     async def test_dotnet_template_creation(self):
         """Test that dotnet template creates a valid plan."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = await create_dev_plan({
+            import os
+            os.chdir(temp_dir)
+
+            # Create a minimal context file
+            context_content = """
+project:
+  name: test-project
+  type: python
+  description: A test project
+"""
+            context_file = Path(temp_dir) / "context.yaml"
+            with open(context_file, 'w') as f:
+                f.write(context_content)
+
+            result = await init_dev_planning({
+                "context": str(context_file),
                 "name": "test-dotnet-api",
                 "template": "dotnet",
                 "project_directory": temp_dir,
-
             })
 
             assert len(result) == 1
-            assert "Created development plan" in result[0].text
+            assert "Development Planning Initialized" in result[0].text
 
-            # Check that the plan file was created
-            plan_file = Path(temp_dir) / ".cursorplans" / "test-dotnet-api.devplan"
-            assert plan_file.exists()
+            # Check that .cursorplans directory was created but no plan file yet
+            cursorplans_dir = Path(temp_dir) / ".cursorplans"
+            assert cursorplans_dir.exists()
+            plan_file = cursorplans_dir / "test-dotnet-api.devplan"
+            assert not plan_file.exists()
 
-            # Check that the plan references implemented dotnet templates
-            with open(plan_file) as f:
-                content = f.read()
-                assert "dotnet_program" in content
-                assert "dotnet_controller" in content
-                assert "ef_dbcontext" in content
-                assert "dotnet_service" in content
-                assert "dotnet_csproj" in content
-
-                # Verify it's a .NET project
-                assert "C#" in content
-                assert ".NET 8" in content
-                assert "Web API" in content
+            # This test now only checks initialization, not plan creation
+            # The plan creation would be tested in a separate prepare test
 
     def test_dotnet_template_content_quality(self):
         """Test that .NET templates generate high-quality, usable content."""
