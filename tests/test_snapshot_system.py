@@ -2,12 +2,13 @@
 Tests for the snapshot system and rollback functionality.
 """
 
-import pytest
-import tempfile
-import shutil
 import json
+import shutil
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, AsyncMock
+
+import pytest
+
 from cursor_plans_mcp.execution import SnapshotManager, StateSnapshot
 
 
@@ -63,7 +64,9 @@ class TestSnapshotManager:
         snapshot_dir = snapshot_manager.snapshots_dir / "test-snapshot"
         snapshot_dir.mkdir()
 
-        file_count, total_size = await snapshot_manager._copy_project_files(snapshot_dir)
+        file_count, total_size = await snapshot_manager._copy_project_files(
+            snapshot_dir
+        )
 
         assert file_count > 0
         assert total_size > 0
@@ -90,7 +93,9 @@ class TestSnapshotManager:
         assert ".git/config" not in files
 
     @pytest.mark.asyncio
-    async def test_create_snapshot_success(self, snapshot_manager, sample_project_files):
+    async def test_create_snapshot_success(
+        self, snapshot_manager, sample_project_files
+    ):
         """Test successful snapshot creation."""
         snapshot_id = await snapshot_manager.create_snapshot("Test snapshot")
 
@@ -106,7 +111,7 @@ class TestSnapshotManager:
         assert metadata_file.exists()
 
         # Check metadata content
-        with open(metadata_file, 'r') as f:
+        with open(metadata_file, "r") as f:
             metadata = json.load(f)
 
         assert metadata["description"] == "Test snapshot"
@@ -116,7 +121,9 @@ class TestSnapshotManager:
         assert "project_files" in metadata
 
     @pytest.mark.asyncio
-    async def test_create_snapshot_empty_description(self, snapshot_manager, sample_project_files):
+    async def test_create_snapshot_empty_description(
+        self, snapshot_manager, sample_project_files
+    ):
         """Test snapshot creation with empty description."""
         snapshot_id = await snapshot_manager.create_snapshot("")
 
@@ -126,20 +133,24 @@ class TestSnapshotManager:
         snapshot_dir = snapshot_manager.snapshots_dir / snapshot_id
         metadata_file = snapshot_dir / "metadata.json"
 
-        with open(metadata_file, 'r') as f:
+        with open(metadata_file, "r") as f:
             metadata = json.load(f)
 
         assert metadata["description"] == ""
 
     @pytest.mark.skip(reason="Snapshot restoration feature not fully implemented")
     @pytest.mark.asyncio
-    async def test_restore_snapshot_success(self, snapshot_manager, sample_project_files):
+    async def test_restore_snapshot_success(
+        self, snapshot_manager, sample_project_files
+    ):
         """Test successful snapshot restoration."""
         # Create a snapshot first
         snapshot_id = await snapshot_manager.create_snapshot("Test snapshot")
 
         # Modify the project files
-        (snapshot_manager.project_dir / "src" / "main.py").write_text("print('Modified')")
+        (snapshot_manager.project_dir / "src" / "main.py").write_text(
+            "print('Modified')"
+        )
         (snapshot_manager.project_dir / "new_file.txt").write_text("New file")
 
         # Restore the snapshot
@@ -148,7 +159,9 @@ class TestSnapshotManager:
         assert success is True
 
         # Check that files were restored
-        assert (snapshot_manager.project_dir / "src" / "main.py").read_text() == "print('Hello')"
+        assert (
+            snapshot_manager.project_dir / "src" / "main.py"
+        ).read_text() == "print('Hello')"
         assert not (snapshot_manager.project_dir / "new_file.txt").exists()
 
     @pytest.mark.asyncio
@@ -158,7 +171,9 @@ class TestSnapshotManager:
             await snapshot_manager.restore_snapshot("nonexistent-snapshot")
 
     @pytest.mark.asyncio
-    async def test_restore_snapshot_creates_backup(self, snapshot_manager, sample_project_files):
+    async def test_restore_snapshot_creates_backup(
+        self, snapshot_manager, sample_project_files
+    ):
         """Test that restoration creates a backup."""
         # Create initial snapshot
         snapshot_id = await snapshot_manager.create_snapshot("Initial snapshot")
@@ -186,7 +201,9 @@ class TestSnapshotManager:
 
     @pytest.mark.skip(reason="Snapshot listing feature not fully implemented")
     @pytest.mark.asyncio
-    async def test_list_snapshots_with_data(self, snapshot_manager, sample_project_files):
+    async def test_list_snapshots_with_data(
+        self, snapshot_manager, sample_project_files
+    ):
         """Test listing snapshots with data."""
         # Create multiple snapshots
         await snapshot_manager.create_snapshot("Snapshot 1")
@@ -209,7 +226,9 @@ class TestSnapshotManager:
             assert "total_size" in snapshot
 
     @pytest.mark.asyncio
-    async def test_delete_snapshot_success(self, snapshot_manager, sample_project_files):
+    async def test_delete_snapshot_success(
+        self, snapshot_manager, sample_project_files
+    ):
         """Test successful snapshot deletion."""
         # Create a snapshot
         snapshot_id = await snapshot_manager.create_snapshot("Test snapshot")
@@ -239,7 +258,9 @@ class TestSnapshotManager:
         assert success is False
 
     @pytest.mark.asyncio
-    async def test_get_snapshot_info_success(self, snapshot_manager, sample_project_files):
+    async def test_get_snapshot_info_success(
+        self, snapshot_manager, sample_project_files
+    ):
         """Test getting snapshot info."""
         # Create a snapshot
         snapshot_id = await snapshot_manager.create_snapshot("Test snapshot")
@@ -273,7 +294,7 @@ class TestSnapshotManager:
 
         # Get project files list from metadata
         metadata_file = snapshot_dir / "metadata.json"
-        with open(metadata_file, 'r') as f:
+        with open(metadata_file, "r") as f:
             metadata = json.load(f)
 
         project_files = metadata["project_files"]
@@ -282,7 +303,9 @@ class TestSnapshotManager:
         await snapshot_manager._restore_project_files(snapshot_dir, project_files)
 
         # Check that files were restored
-        assert (snapshot_manager.project_dir / "src" / "main.py").read_text() == "print('Hello')"
+        assert (
+            snapshot_manager.project_dir / "src" / "main.py"
+        ).read_text() == "print('Hello')"
         assert not (snapshot_manager.project_dir / "new_file.txt").exists()
 
     @pytest.mark.asyncio
@@ -293,16 +316,18 @@ class TestSnapshotManager:
         await snapshot_manager._add_snapshot_to_index("test-snapshot", test_metadata)
 
         # Verify it was added
-        with open(snapshot_manager.metadata_file, 'r') as f:
+        with open(snapshot_manager.metadata_file, "r") as f:
             data = json.load(f)
 
         assert "test-snapshot" in data
         assert data["test-snapshot"]["description"] == "Test"
 
         # Test updating metadata
-        await snapshot_manager._update_snapshot_metadata("test-snapshot", {"updated": True})
+        await snapshot_manager._update_snapshot_metadata(
+            "test-snapshot", {"updated": True}
+        )
 
-        with open(snapshot_manager.metadata_file, 'r') as f:
+        with open(snapshot_manager.metadata_file, "r") as f:
             data = json.load(f)
 
         assert data["test-snapshot"]["updated"] is True
@@ -310,7 +335,7 @@ class TestSnapshotManager:
         # Test removing from index
         await snapshot_manager._remove_snapshot_from_index("test-snapshot")
 
-        with open(snapshot_manager.metadata_file, 'r') as f:
+        with open(snapshot_manager.metadata_file, "r") as f:
             data = json.load(f)
 
         assert "test-snapshot" not in data
@@ -323,12 +348,12 @@ class TestSnapshotManager:
             metadata_file.unlink()
 
         # Create manager (should create metadata file)
-        manager = SnapshotManager(temp_project_dir)
+        SnapshotManager(temp_project_dir)
 
         assert metadata_file.exists()
 
         # Check that it contains empty JSON object
-        with open(metadata_file, 'r') as f:
+        with open(metadata_file, "r") as f:
             data = json.load(f)
 
         assert data == {}
@@ -350,7 +375,7 @@ class TestStateSnapshot:
             description="Test snapshot",
             file_count=10,
             total_size=1024,
-            metadata=metadata
+            metadata=metadata,
         )
 
         assert snapshot.id == "test-snapshot"

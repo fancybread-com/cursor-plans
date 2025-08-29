@@ -2,14 +2,15 @@
 Dependency resolution and execution planning.
 """
 
-from typing import Dict, Any, List, Set
+from collections import defaultdict
 from dataclasses import dataclass
-from collections import defaultdict, deque
+from typing import Any, Dict, List
 
 
 @dataclass
 class Phase:
     """Represents a single execution phase."""
+
     name: str
     data: Dict[str, Any]
     priority: int
@@ -19,6 +20,7 @@ class Phase:
 @dataclass
 class ExecutionPlan:
     """Complete execution plan with resolved dependencies."""
+
     phases: List[Phase]
     plan_data: Dict[str, Any]
 
@@ -81,7 +83,7 @@ class DependencyResolver:
                 name=phase_name,
                 data=phase_data,
                 priority=priority,
-                dependencies=dependencies
+                dependencies=dependencies,
             )
 
             phases.append(phase)
@@ -96,7 +98,9 @@ class DependencyResolver:
         for phase in phases:
             for dep in phase.dependencies:
                 if dep not in phase_names:
-                    raise ValueError(f"Phase '{phase.name}' depends on unknown phase '{dep}'")
+                    raise ValueError(
+                        f"Phase '{phase.name}' depends on unknown phase '{dep}'"
+                    )
 
         # Check for cycles
         if self._has_cycles(phases):
@@ -182,7 +186,9 @@ class DependencyResolver:
 
         # Check if all phases were processed
         if len(ordered_phases) != len(phases):
-            raise ValueError("Circular dependency detected (should have been caught earlier)")
+            raise ValueError(
+                "Circular dependency detected (should have been caught earlier)"
+            )
 
         return ordered_phases
 

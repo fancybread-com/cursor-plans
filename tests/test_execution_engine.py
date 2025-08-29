@@ -2,18 +2,19 @@
 Tests for the execution engine and PlanExecutor.
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
+
+import pytest
+
 from cursor_plans_mcp.execution import (
-    PlanExecutor,
+    ExecutionPlan,
     ExecutionResult,
     ExecutionStatus,
-    DependencyResolver,
-    ExecutionPlan,
-    Phase
+    Phase,
+    PlanExecutor,
 )
 
 
@@ -36,44 +37,36 @@ class TestPlanExecutor:
     def sample_plan_data(self):
         """Sample plan data for testing."""
         return {
-            "project": {
-                "name": "test-project",
-                "version": "1.0.0"
-            },
+            "project": {"name": "test-project", "version": "1.0.0"},
             "target_state": {
-                "architecture": [
-                    {"language": "python"},
-                    {"framework": "FastAPI"}
-                ]
+                "architecture": [{"language": "python"}, {"framework": "FastAPI"}]
             },
             "resources": {
                 "files": [
                     {
                         "path": "src/main.py",
                         "type": "entry_point",
-                        "template": "fastapi_main"
+                        "template": "fastapi_main",
                     }
                 ]
             },
             "phases": {
-                "foundation": {
-                    "priority": 1,
-                    "tasks": ["setup_project_structure"]
-                },
+                "foundation": {"priority": 1, "tasks": ["setup_project_structure"]},
                 "api_layer": {
                     "priority": 2,
                     "dependencies": ["foundation"],
-                    "tasks": ["create_endpoints"]
-                }
-            }
+                    "tasks": ["create_endpoints"],
+                },
+            },
         }
 
     @pytest.fixture
     def sample_plan_file(self, temp_project_dir, sample_plan_data):
         """Create a sample plan file."""
         import yaml
+
         plan_file = temp_project_dir / "test.devplan"
-        with open(plan_file, 'w') as f:
+        with open(plan_file, "w") as f:
             yaml.dump(sample_plan_data, f)
         return str(plan_file)
 
@@ -104,9 +97,10 @@ class TestPlanExecutor:
     async def test_load_plan_missing_sections(self, executor, temp_project_dir):
         """Test plan loading with missing required sections."""
         import yaml
+
         invalid_plan = {"project": {"name": "test"}}  # Missing required sections
         plan_file = temp_project_dir / "invalid.devplan"
-        with open(plan_file, 'w') as f:
+        with open(plan_file, "w") as f:
             yaml.dump(invalid_plan, f)
 
         with pytest.raises(ValueError, match="Missing required section"):
@@ -115,16 +109,27 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_dry_run_execution(self, executor, sample_plan_file):
         """Test dry run execution."""
-        from datetime import datetime
 
         # Mock the dependency resolver
-        with patch.object(executor.dependency_resolver, 'create_execution_plan') as mock_create:
+        with patch.object(
+            executor.dependency_resolver, "create_execution_plan"
+        ) as mock_create:
             mock_plan = ExecutionPlan(
                 phases=[
-                    Phase(name="foundation", data={"priority": 1}, priority=1, dependencies=[]),
-                    Phase(name="api_layer", data={"priority": 2}, priority=2, dependencies=["foundation"])
+                    Phase(
+                        name="foundation",
+                        data={"priority": 1},
+                        priority=1,
+                        dependencies=[],
+                    ),
+                    Phase(
+                        name="api_layer",
+                        data={"priority": 2},
+                        priority=2,
+                        dependencies=["foundation"],
+                    ),
                 ],
-                plan_data={"resources": {"files": [{"path": "src/main.py"}]}}
+                plan_data={"resources": {"files": [{"path": "src/main.py"}]}},
             )
             mock_create.return_value = mock_plan
 
@@ -140,7 +145,9 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_actual_execution_success(self, executor, sample_plan_file):
         """Test successful actual execution."""
-        with patch.object(executor.snapshot_manager, 'create_snapshot') as mock_snapshot:
+        with patch.object(
+            executor.snapshot_manager, "create_snapshot"
+        ) as mock_snapshot:
             mock_snapshot.return_value = "test-snapshot-id"
 
             result = await executor.execute_plan(sample_plan_file, dry_run=False)
@@ -153,13 +160,21 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_execution_failure_with_rollback(self, executor, sample_plan_file):
         """Test execution failure triggers rollback."""
-        with patch.object(executor.snapshot_manager, 'create_snapshot') as mock_snapshot:
-            with patch.object(executor.snapshot_manager, 'restore_snapshot') as mock_restore:
+        with patch.object(
+            executor.snapshot_manager, "create_snapshot"
+        ) as mock_snapshot:
+            with patch.object(
+                executor.snapshot_manager, "restore_snapshot"
+            ) as mock_restore:
                 mock_snapshot.return_value = "test-snapshot-id"
 
                 # Mock execution to fail
-                with patch.object(executor, '_execute_plan', side_effect=Exception("Test error")):
-                    result = await executor.execute_plan(sample_plan_file, dry_run=False)
+                with patch.object(
+                    executor, "_execute_plan", side_effect=Exception("Test error")
+                ):
+                    result = await executor.execute_plan(
+                        sample_plan_file, dry_run=False
+                    )
 
                     assert result.success is False
                     assert result.status == ExecutionStatus.FAILED
@@ -169,7 +184,9 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_rollback_to_snapshot(self, executor):
         """Test rollback functionality."""
-        with patch.object(executor.snapshot_manager, 'restore_snapshot') as mock_restore:
+        with patch.object(
+            executor.snapshot_manager, "restore_snapshot"
+        ) as mock_restore:
             mock_restore.return_value = True
 
             result = await executor.rollback_to_snapshot("test-snapshot")
@@ -181,7 +198,9 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_rollback_failure(self, executor):
         """Test rollback failure handling."""
-        with patch.object(executor.snapshot_manager, 'restore_snapshot') as mock_restore:
+        with patch.object(
+            executor.snapshot_manager, "restore_snapshot"
+        ) as mock_restore:
             mock_restore.return_value = False
 
             result = await executor.rollback_to_snapshot("test-snapshot")
@@ -195,10 +214,10 @@ class TestPlanExecutor:
         """Test listing snapshots."""
         mock_snapshots = [
             {"id": "snap1", "description": "Test 1"},
-            {"id": "snap2", "description": "Test 2"}
+            {"id": "snap2", "description": "Test 2"},
         ]
 
-        with patch.object(executor.snapshot_manager, 'list_snapshots') as mock_list:
+        with patch.object(executor.snapshot_manager, "list_snapshots") as mock_list:
             mock_list.return_value = mock_snapshots
 
             snapshots = await executor.list_snapshots()
@@ -213,24 +232,28 @@ class TestPlanExecutor:
             name="foundation",
             data={"tasks": ["setup_project_structure"]},
             priority=1,
-            dependencies=[]
+            dependencies=[],
         )
 
-        with patch.object(executor, '_execute_task') as mock_task:
+        with patch.object(executor, "_execute_task") as mock_task:
             mock_task.return_value = ["Created directory: src"]
 
             changes = await executor._execute_phase(phase, sample_plan_data)
 
             assert len(changes) > 0
-            mock_task.assert_called_once_with("setup_project_structure", sample_plan_data)
+            mock_task.assert_called_once_with(
+                "setup_project_structure", sample_plan_data
+            )
 
     @pytest.mark.asyncio
     async def test_execute_task_mapping(self, executor, sample_plan_data):
         """Test task execution mapping."""
-        with patch.object(executor, '_setup_project_structure') as mock_setup:
+        with patch.object(executor, "_setup_project_structure") as mock_setup:
             mock_setup.return_value = ["Created directory: src"]
 
-            changes = await executor._execute_task("setup_project_structure", sample_plan_data)
+            changes = await executor._execute_task(
+                "setup_project_structure", sample_plan_data
+            )
 
             assert len(changes) > 0
             mock_setup.assert_called_once_with(sample_plan_data)
@@ -248,10 +271,14 @@ class TestPlanExecutor:
         """Test file creation from resources."""
         files = [
             {"path": "src/main.py", "type": "entry_point", "template": "fastapi_main"},
-            {"path": "requirements.txt", "type": "dependencies", "template": "requirements"}
+            {
+                "path": "requirements.txt",
+                "type": "dependencies",
+                "template": "requirements",
+            },
         ]
 
-        with patch.object(executor, '_create_file') as mock_create:
+        with patch.object(executor, "_create_file") as mock_create:
             mock_create.return_value = True
 
             changes = await executor._create_files(files, "foundation")
@@ -272,7 +299,9 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_generate_file_content(self, executor):
         """Test file content generation."""
-        content = executor._generate_file_content("main.py", "entry_point", "fastapi_main")
+        content = executor._generate_file_content(
+            "main.py", "entry_point", "fastapi_main"
+        )
 
         assert "from fastapi import FastAPI" in content
         assert "app = FastAPI" in content
@@ -345,7 +374,7 @@ class TestExecutionResult:
         result = ExecutionResult(
             success=True,
             status=ExecutionStatus.COMPLETED,
-            executed_phases=["foundation", "api_layer"]
+            executed_phases=["foundation", "api_layer"],
         )
 
         assert result.success is True
@@ -359,7 +388,7 @@ class TestExecutionResult:
             success=True,
             status=ExecutionStatus.COMPLETED,
             executed_phases=["foundation"],
-            changes_made=["Created: src/main.py"]
+            changes_made=["Created: src/main.py"],
         )
 
         assert result.changes_made == ["Created: src/main.py"]
@@ -371,7 +400,7 @@ class TestExecutionResult:
             status=ExecutionStatus.FAILED,
             executed_phases=["foundation"],
             failed_phase="api_layer",
-            error_message="Test error"
+            error_message="Test error",
         )
 
         assert result.success is False

@@ -2,11 +2,17 @@
 Tests for template generation and context handling.
 """
 
-import pytest
 import os
-import yaml
 from pathlib import Path
-from cursor_plans_mcp.server import init_dev_planning, prepare_dev_plan, detect_existing_codebase
+
+import pytest
+import yaml
+
+from cursor_plans_mcp.server import (
+    detect_existing_codebase,
+    init_dev_planning,
+    prepare_dev_plan,
+)
 
 
 class TestTemplateGeneration:
@@ -15,7 +21,7 @@ class TestTemplateGeneration:
     @pytest.mark.asyncio
     async def test_basic_template(self, temp_dir):
         """Test basic template generation."""
-        os.chdir(temp_dir)        # Create a minimal context file
+        os.chdir(temp_dir)  # Create a minimal context file
         context_content = """
 project:
   name: test-project
@@ -23,20 +29,16 @@ project:
   description: A test project
 """
         context_file = temp_dir / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
         # First initialize the project
-        await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         # Then prepare the plan
-        result = await prepare_dev_plan({
-            "name": "basic-project",
-            "template": "basic"
-        })
+        await prepare_dev_plan({"name": "basic-project", "template": "basic"})
 
         # Check that plan file was created in temp directory
         plan_file = Path(temp_dir) / ".cursorplans" / "basic-project.devplan"
@@ -67,19 +69,15 @@ project:
   description: A FastAPI web service
 """
         context_file = Path(temp_dir) / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
-        await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         # Then prepare the plan
-        result = await prepare_dev_plan({
-            "name": "fastapi-project",
-            "template": "fastapi"
-        })
+        await prepare_dev_plan({"name": "fastapi-project", "template": "fastapi"})
 
         plan_file = Path(temp_dir) / ".cursorplans" / "fastapi-project.devplan"
         assert plan_file.exists()
@@ -122,19 +120,15 @@ project:
   description: A .NET web service
 """
         context_file = Path(temp_dir) / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
-        await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         # Then prepare the plan
-        result = await prepare_dev_plan({
-            "name": "dotnet-project",
-            "template": "dotnet"
-        })
+        await prepare_dev_plan({"name": "dotnet-project", "template": "dotnet"})
 
         plan_file = Path(temp_dir) / ".cursorplans" / "dotnet-project.devplan"
         assert plan_file.exists()
@@ -167,19 +161,15 @@ project:
   description: A Vue.js web application
 """
         context_file = Path(temp_dir) / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
-        await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         # Then prepare the plan
-        result = await prepare_dev_plan({
-            "name": "vue-project",
-            "template": "vuejs"
-        })
+        await prepare_dev_plan({"name": "vue-project", "template": "vuejs"})
 
         plan_file = Path(temp_dir) / ".cursorplans" / "vue-project.devplan"
         assert plan_file.exists()
@@ -208,7 +198,9 @@ class TestExistingCodebaseDetection:
         """Test detection of FastAPI project."""
         # Create FastAPI project files
         requirements_file = temp_dir / "requirements.txt"
-        requirements_file.write_text("fastapi>=0.68.0\nuvicorn>=0.15.0\npydantic>=1.8.0")
+        requirements_file.write_text(
+            "fastapi>=0.68.0\nuvicorn>=0.15.0\npydantic>=1.8.0"
+        )
 
         main_file = temp_dir / "main.py"
         main_file.write_text("from fastapi import FastAPI\n\napp = FastAPI()")
@@ -224,13 +216,15 @@ class TestExistingCodebaseDetection:
         """Test detection of .NET project."""
         # Create .NET project files
         csproj_file = temp_dir / "TestProject.csproj"
-        csproj_file.write_text("""
+        csproj_file.write_text(
+            """
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 </Project>
-        """)
+        """
+        )
 
         program_file = temp_dir / "Program.cs"
         program_file.write_text("var app = WebApplication.CreateBuilder(args).Build();")
@@ -246,12 +240,14 @@ class TestExistingCodebaseDetection:
         """Test detection of Vue.js project."""
         # Create Vue.js project files
         package_file = temp_dir / "package.json"
-        package_file.write_text("""{
+        package_file.write_text(
+            """{
   "name": "vue-project",
   "dependencies": {
     "vue": "^3.0.0"
   }
-}""")
+}"""
+        )
 
         main_file = temp_dir / "src" / "main.js"
         main_file.parent.mkdir(parents=True, exist_ok=True)
@@ -297,19 +293,15 @@ project:
   description: A detected FastAPI project
 """
         context_file = Path(temp_dir) / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
-        await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         # Then prepare the plan
-        result = await prepare_dev_plan({
-            "name": "detected-project",
-            "template": "fastapi"
-        })
+        await prepare_dev_plan({"name": "detected-project", "template": "fastapi"})
 
         plan_file = Path(temp_dir) / ".cursorplans" / "detected-project.devplan"
         assert plan_file.exists()
@@ -330,10 +322,9 @@ class TestContextHandling:
         """Test creating plan with default context file."""
         os.chdir(temp_dir)
 
-        result = await init_dev_planning({
-            "context": str(sample_context_file),
-            "project_directory": str(temp_dir)
-        })
+        result = await init_dev_planning(
+            {"context": str(sample_context_file), "project_directory": str(temp_dir)}
+        )
 
         # Should mention initialization success
         result_text = result[0].text
@@ -344,18 +335,19 @@ class TestContextHandling:
         """Test creating plan with story-specific context."""
         # Create story-specific context file
         story_context = temp_dir / "context-story-456.yaml"
-        story_context.write_text("""project:
+        story_context.write_text(
+            """project:
   name: story-project
   type: python
   description: A story-specific project
-""")
+"""
+        )
 
         os.chdir(temp_dir)
 
-        result = await init_dev_planning({
-            "context": str(story_context),
-            "project_directory": str(temp_dir)
-        })
+        result = await init_dev_planning(
+            {"context": str(story_context), "project_directory": str(temp_dir)}
+        )
 
         # Should use the story-specific context
         result_text = result[0].text
@@ -384,10 +376,16 @@ requirements.txt"""
 
         # Test the context loading function
         import asyncio
+
         context_files = asyncio.run(load_context_file("test-context.txt"))
 
         # Should parse non-comment, non-empty lines
-        expected_files = ["src/main.py", "src/models.py", "tests/test_main.py", "requirements.txt"]
+        expected_files = [
+            "src/main.py",
+            "src/models.py",
+            "tests/test_main.py",
+            "requirements.txt",
+        ]
         for expected in expected_files:
             assert expected in context_files
 
@@ -405,12 +403,14 @@ class TestTemplateValidation:
         os.chdir(temp_dir)
 
         # Use an invalid template name
-        result = await init_dev_planning({
-            "name": "fallback-project",
-            "template": "nonexistent-template",
-            "context": "",
-            "project_directory": str(temp_dir)
-        })
+        result = await init_dev_planning(
+            {
+                "name": "fallback-project",
+                "template": "nonexistent-template",
+                "context": "",
+                "project_directory": str(temp_dir),
+            }
+        )
 
         # Should not crash, might fall back to basic or show error
         assert len(result) == 1
@@ -440,19 +440,15 @@ project:
   description: A {template} test project
 """
             context_file = Path(temp_dir) / f"context-{template}.yaml"
-            with open(context_file, 'w') as f:
+            with open(context_file, "w") as f:
                 f.write(context_content)
 
-            await init_dev_planning({
-                "context": str(context_file),
-                "project_directory": str(temp_dir)
-            })
+            await init_dev_planning(
+                {"context": str(context_file), "project_directory": str(temp_dir)}
+            )
 
             # Then prepare the plan
-            result = await prepare_dev_plan({
-                "name": f"{template}-test",
-                "template": template
-            })
+            await prepare_dev_plan({"name": f"{template}-test", "template": template})
 
             plan_file = Path(temp_dir) / ".cursorplans" / f"{template}-test.devplan"
             assert plan_file.exists(), f"Plan file not created for template: {template}"

@@ -2,11 +2,9 @@
 Tests for permission error handling in the execution engine.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-import tempfile
-import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 from src.cursor_plans_mcp.execution.engine import PlanExecutor
 
@@ -20,7 +18,7 @@ class TestPermissionHandling:
         executor = PlanExecutor(temp_dir)
 
         # Mock the file creation to simulate a permission error
-        with patch('builtins.open', side_effect=PermissionError("Permission denied")):
+        with patch("builtins.open", side_effect=PermissionError("Permission denied")):
             with pytest.raises(PermissionError) as exc_info:
                 await executor._create_file("test.py", "file", "basic")
 
@@ -33,7 +31,7 @@ class TestPermissionHandling:
         executor = PlanExecutor(temp_dir)
 
         # Mock the file creation to simulate an OS error
-        with patch('builtins.open', side_effect=OSError("No space left on device")):
+        with patch("builtins.open", side_effect=OSError("No space left on device")):
             with pytest.raises(OSError) as exc_info:
                 await executor._create_file("test.py", "file", "basic")
 
@@ -46,7 +44,9 @@ class TestPermissionHandling:
         executor = PlanExecutor(temp_dir)
 
         # Mock the directory creation to simulate a permission error
-        with patch('pathlib.Path.mkdir', side_effect=PermissionError("Permission denied")):
+        with patch(
+            "pathlib.Path.mkdir", side_effect=PermissionError("Permission denied")
+        ):
             with pytest.raises(PermissionError) as exc_info:
                 await executor._create_file("subdir/test.py", "file", "basic")
 
@@ -61,7 +61,9 @@ class TestPermissionHandling:
         files = [{"path": "test.py", "type": "file", "template": "basic"}]
 
         # Mock the file creation to simulate a permission error
-        with patch.object(executor, '_create_file', side_effect=PermissionError("Permission denied")):
+        with patch.object(
+            executor, "_create_file", side_effect=PermissionError("Permission denied")
+        ):
             with pytest.raises(PermissionError) as exc_info:
                 await executor._create_files(files, "test_phase")
 
@@ -91,12 +93,16 @@ resources:
         plan_file.write_text(plan_content)
 
         # Mock the PlanExecutor to simulate a permission error
-        with patch('src.cursor_plans_mcp.server.PlanExecutor') as mock_executor_class:
+        with patch("src.cursor_plans_mcp.server.PlanExecutor") as mock_executor_class:
             mock_executor = MagicMock()
             mock_executor_class.return_value = mock_executor
-            mock_executor.execute_plan.side_effect = PermissionError("Cannot write to file src/main.py")
+            mock_executor.execute_plan.side_effect = PermissionError(
+                "Cannot write to file src/main.py"
+            )
 
-            result = await apply_dev_plan({"plan_file": str(plan_file), "dry_run": False})
+            result = await apply_dev_plan(
+                {"plan_file": str(plan_file), "dry_run": False}
+            )
 
             # Check that the error is properly formatted
             assert "❌ **Permission Error:**" in result[0].text
@@ -128,12 +134,14 @@ resources:
         plan_file.write_text(plan_content)
 
         # Mock the PlanExecutor to simulate an OS error
-        with patch('src.cursor_plans_mcp.server.PlanExecutor') as mock_executor_class:
+        with patch("src.cursor_plans_mcp.server.PlanExecutor") as mock_executor_class:
             mock_executor = MagicMock()
             mock_executor_class.return_value = mock_executor
             mock_executor.execute_plan.side_effect = OSError("No space left on device")
 
-            result = await apply_dev_plan({"plan_file": str(plan_file), "dry_run": False})
+            result = await apply_dev_plan(
+                {"plan_file": str(plan_file), "dry_run": False}
+            )
 
             # Check that the error is properly formatted
             assert "❌ **OS Error:**" in result[0].text

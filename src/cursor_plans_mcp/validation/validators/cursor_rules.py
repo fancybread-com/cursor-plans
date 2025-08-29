@@ -6,9 +6,10 @@ Validates plans against .cursorrules files and team coding standards.
 
 import os
 import re
-from typing import Dict, Any, List, Optional
-from .base import BaseValidator
+from typing import Any, Dict, Optional
+
 from ..results import ValidationResult
+from .base import BaseValidator
 
 
 class CursorRulesValidator(BaseValidator):
@@ -18,7 +19,9 @@ class CursorRulesValidator(BaseValidator):
     def name(self) -> str:
         return "Cursor Rules validation"
 
-    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
+    async def validate(
+        self, plan_data: Dict[str, Any], plan_file_path: str
+    ) -> ValidationResult:
         result = ValidationResult()
 
         # Get the directory containing the plan file
@@ -31,16 +34,26 @@ class CursorRulesValidator(BaseValidator):
             result.add_suggestion(
                 "No .cursorrules file found",
                 plan_dir,
-                "Consider creating a .cursorrules file to define coding standards and architectural patterns"
+                "Consider creating a .cursorrules file to define coding standards and architectural patterns",
             )
             return result
 
         # Validate against different rule categories
-        self._validate_architectural_patterns(plan_data, cursor_rules, plan_file_path, result)
-        self._validate_naming_conventions(plan_data, cursor_rules, plan_file_path, result)
-        self._validate_security_requirements(plan_data, cursor_rules, plan_file_path, result)
-        self._validate_framework_patterns(plan_data, cursor_rules, plan_file_path, result)
-        self._validate_testing_requirements(plan_data, cursor_rules, plan_file_path, result)
+        self._validate_architectural_patterns(
+            plan_data, cursor_rules, plan_file_path, result
+        )
+        self._validate_naming_conventions(
+            plan_data, cursor_rules, plan_file_path, result
+        )
+        self._validate_security_requirements(
+            plan_data, cursor_rules, plan_file_path, result
+        )
+        self._validate_framework_patterns(
+            plan_data, cursor_rules, plan_file_path, result
+        )
+        self._validate_testing_requirements(
+            plan_data, cursor_rules, plan_file_path, result
+        )
 
         return result
 
@@ -64,12 +77,18 @@ class CursorRulesValidator(BaseValidator):
                 return None
 
         try:
-            with open(cursor_rules_path, 'r', encoding='utf-8') as f:
+            with open(cursor_rules_path, "r", encoding="utf-8") as f:
                 return f.read()
         except Exception:
             return None
 
-    def _validate_architectural_patterns(self, plan_data: Dict[str, Any], cursor_rules: str, plan_file_path: str, result: ValidationResult):
+    def _validate_architectural_patterns(
+        self,
+        plan_data: Dict[str, Any],
+        cursor_rules: str,
+        plan_file_path: str,
+        result: ValidationResult,
+    ):
         """Validate architectural patterns against Cursor rules."""
         rules_lower = cursor_rules.lower()
 
@@ -79,7 +98,7 @@ class CursorRulesValidator(BaseValidator):
                 result.add_warning(
                     "Direct database access detected, but repository pattern is required",
                     f"resources section in {plan_file_path}",
-                    "Consider adding repository classes to abstract database operations"
+                    "Consider adding repository classes to abstract database operations",
                 )
 
         # Check for dependency injection requirements
@@ -88,7 +107,7 @@ class CursorRulesValidator(BaseValidator):
                 result.add_suggestion(
                     "Plan may benefit from dependency injection patterns",
                     f"architecture in {plan_file_path}",
-                    "Consider adding DI container setup in your foundation phase"
+                    "Consider adding DI container setup in your foundation phase",
                 )
 
         # Check for layered architecture
@@ -97,10 +116,16 @@ class CursorRulesValidator(BaseValidator):
                 result.add_suggestion(
                     "Consider implementing layered architecture",
                     f"resources.files in {plan_file_path}",
-                    "Organize files into layers: controllers, services, repositories, models"
+                    "Organize files into layers: controllers, services, repositories, models",
                 )
 
-    def _validate_naming_conventions(self, plan_data: Dict[str, Any], cursor_rules: str, plan_file_path: str, result: ValidationResult):
+    def _validate_naming_conventions(
+        self,
+        plan_data: Dict[str, Any],
+        cursor_rules: str,
+        plan_file_path: str,
+        result: ValidationResult,
+    ):
         """Validate naming conventions against Cursor rules."""
         # Extract naming patterns from rules
         naming_patterns = self._extract_naming_patterns(cursor_rules)
@@ -122,10 +147,16 @@ class CursorRulesValidator(BaseValidator):
                                         result.add_warning(
                                             f"File name '{file_name}' may not follow {pattern_name} naming convention",
                                             f"resources.files[{i}].path in {plan_file_path}",
-                                            f"Consider using naming pattern: {pattern_regex}"
+                                            f"Consider using naming pattern: {pattern_regex}",
                                         )
 
-    def _validate_security_requirements(self, plan_data: Dict[str, Any], cursor_rules: str, plan_file_path: str, result: ValidationResult):
+    def _validate_security_requirements(
+        self,
+        plan_data: Dict[str, Any],
+        cursor_rules: str,
+        plan_file_path: str,
+        result: ValidationResult,
+    ):
         """Validate security requirements from Cursor rules."""
         rules_lower = cursor_rules.lower()
 
@@ -135,16 +166,20 @@ class CursorRulesValidator(BaseValidator):
                 result.add_error(
                     "Authentication is required but not found in plan",
                     f"target_state or phases in {plan_file_path}",
-                    "Add authentication implementation to your security phase"
+                    "Add authentication implementation to your security phase",
                 )
 
         # Check for authorization requirements
-        if "authorization" in rules_lower or "rbac" in rules_lower or "role-based" in rules_lower:
+        if (
+            "authorization" in rules_lower
+            or "rbac" in rules_lower
+            or "role-based" in rules_lower
+        ):
             if not self._plan_has_authorization(plan_data):
                 result.add_warning(
                     "Authorization/RBAC may be required",
                     f"security phase in {plan_file_path}",
-                    "Consider adding role-based access control to your plan"
+                    "Consider adding role-based access control to your plan",
                 )
 
         # Check for HTTPS/TLS requirements
@@ -153,10 +188,16 @@ class CursorRulesValidator(BaseValidator):
                 result.add_warning(
                     "HTTPS/TLS configuration may be required",
                     f"target_state in {plan_file_path}",
-                    "Consider adding TLS/HTTPS configuration to your plan"
+                    "Consider adding TLS/HTTPS configuration to your plan",
                 )
 
-    def _validate_framework_patterns(self, plan_data: Dict[str, Any], cursor_rules: str, plan_file_path: str, result: ValidationResult):
+    def _validate_framework_patterns(
+        self,
+        plan_data: Dict[str, Any],
+        cursor_rules: str,
+        plan_file_path: str,
+        result: ValidationResult,
+    ):
         """Validate framework-specific patterns."""
         # Get target framework
         framework = self._get_target_framework(plan_data)
@@ -168,11 +209,13 @@ class CursorRulesValidator(BaseValidator):
 
         # FastAPI specific rules
         if "fastapi" in framework_lower:
-            if "pydantic models" in rules_lower and not self._plan_has_pydantic_models(plan_data):
+            if "pydantic models" in rules_lower and not self._plan_has_pydantic_models(
+                plan_data
+            ):
                 result.add_warning(
                     "Pydantic models are recommended for FastAPI but not found in plan",
                     f"resources in {plan_file_path}",
-                    "Add Pydantic model files for request/response validation"
+                    "Add Pydantic model files for request/response validation",
                 )
 
             if "openapi" in rules_lower or "swagger" in rules_lower:
@@ -180,7 +223,7 @@ class CursorRulesValidator(BaseValidator):
                     result.add_suggestion(
                         "API documentation (OpenAPI/Swagger) is recommended",
                         f"phases in {plan_file_path}",
-                        "Consider adding API documentation generation to your plan"
+                        "Consider adding API documentation generation to your plan",
                     )
 
         # React/Vue specific rules
@@ -189,10 +232,16 @@ class CursorRulesValidator(BaseValidator):
                 result.add_warning(
                     "TypeScript is required but plan may be using JavaScript",
                     f"target_state.architecture in {plan_file_path}",
-                    "Consider using TypeScript for better type safety"
+                    "Consider using TypeScript for better type safety",
                 )
 
-    def _validate_testing_requirements(self, plan_data: Dict[str, Any], cursor_rules: str, plan_file_path: str, result: ValidationResult):
+    def _validate_testing_requirements(
+        self,
+        plan_data: Dict[str, Any],
+        cursor_rules: str,
+        plan_file_path: str,
+        result: ValidationResult,
+    ):
         """Validate testing requirements from Cursor rules."""
         rules_lower = cursor_rules.lower()
 
@@ -202,16 +251,18 @@ class CursorRulesValidator(BaseValidator):
                 result.add_error(
                     "Unit testing is required but no testing phase found",
                     f"phases in {plan_file_path}",
-                    "Add a testing phase with unit test implementation"
+                    "Add a testing phase with unit test implementation",
                 )
 
         # Check for coverage requirements
         if "test coverage" in rules_lower or "coverage" in rules_lower:
-            if self._plan_has_testing_phase(plan_data) and not self._plan_has_coverage_config(plan_data):
+            if self._plan_has_testing_phase(
+                plan_data
+            ) and not self._plan_has_coverage_config(plan_data):
                 result.add_suggestion(
                     "Test coverage tracking is recommended",
                     f"testing phase in {plan_file_path}",
-                    "Consider adding test coverage configuration and reporting"
+                    "Consider adding test coverage configuration and reporting",
                 )
 
     # Helper methods for pattern detection
@@ -239,7 +290,9 @@ class CursorRulesValidator(BaseValidator):
                         tasks = phase_data["tasks"]
                         if isinstance(tasks, list):
                             for task in tasks:
-                                if isinstance(task, str) and ("di" in task.lower() or "injection" in task.lower()):
+                                if isinstance(task, str) and (
+                                    "di" in task.lower() or "injection" in task.lower()
+                                ):
                                     return True
         return False
 
@@ -252,7 +305,15 @@ class CursorRulesValidator(BaseValidator):
                 for file_resource in files:
                     if isinstance(file_resource, dict) and "path" in file_resource:
                         path = file_resource["path"].lower()
-                        if any(layer in path for layer in ["controller", "service", "repository", "model"]):
+                        if any(
+                            layer in path
+                            for layer in [
+                                "controller",
+                                "service",
+                                "repository",
+                                "model",
+                            ]
+                        ):
                             layers.add(True)
                 return len(layers) > 0
         return False
@@ -283,12 +344,17 @@ class CursorRulesValidator(BaseValidator):
         """Check if plan includes authorization/RBAC."""
         # Similar to authentication but looking for authorization patterns
         text_content = str(plan_data).lower()
-        return any(term in text_content for term in ["authorization", "rbac", "role", "permission"])
+        return any(
+            term in text_content
+            for term in ["authorization", "rbac", "role", "permission"]
+        )
 
     def _plan_has_tls(self, plan_data: Dict[str, Any]) -> bool:
         """Check if plan includes TLS/HTTPS configuration."""
         text_content = str(plan_data).lower()
-        return any(term in text_content for term in ["https", "tls", "ssl", "certificate"])
+        return any(
+            term in text_content for term in ["https", "tls", "ssl", "certificate"]
+        )
 
     def _plan_has_testing_phase(self, plan_data: Dict[str, Any]) -> bool:
         """Check if plan has a testing phase."""
@@ -316,7 +382,10 @@ class CursorRulesValidator(BaseValidator):
     def _plan_has_api_documentation(self, plan_data: Dict[str, Any]) -> bool:
         """Check if plan includes API documentation."""
         text_content = str(plan_data).lower()
-        return any(term in text_content for term in ["openapi", "swagger", "documentation", "docs"])
+        return any(
+            term in text_content
+            for term in ["openapi", "swagger", "documentation", "docs"]
+        )
 
     def _plan_has_typescript(self, plan_data: Dict[str, Any]) -> bool:
         """Check if plan uses TypeScript."""
@@ -350,7 +419,7 @@ class CursorRulesValidator(BaseValidator):
         patterns = {}
 
         # Simple pattern extraction - this could be made more sophisticated
-        lines = cursor_rules.split('\n')
+        lines = cursor_rules.split("\n")
         for line in lines:
             line = line.strip().lower()
 

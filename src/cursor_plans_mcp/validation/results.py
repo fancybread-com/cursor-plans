@@ -2,21 +2,23 @@
 Validation result classes for structured validation feedback.
 """
 
+from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
-from dataclasses import dataclass
 
 
 class IssueType(Enum):
     """Types of validation issues."""
-    ERROR = "error"          # Blocking issues that prevent plan execution
-    WARNING = "warning"      # Best practice violations
+
+    ERROR = "error"  # Blocking issues that prevent plan execution
+    WARNING = "warning"  # Best practice violations
     SUGGESTION = "suggestion"  # Improvement recommendations
 
 
 @dataclass
 class ValidationIssue:
     """Represents a single validation issue."""
+
     type: IssueType
     message: str
     location: str
@@ -28,7 +30,7 @@ class ValidationIssue:
         icon = {
             IssueType.ERROR: "🚫",
             IssueType.WARNING: "⚠️",
-            IssueType.SUGGESTION: "💡"
+            IssueType.SUGGESTION: "💡",
         }[self.type]
 
         output = f"{icon} **{self.type.value.title()}**: {self.message}\n"
@@ -79,30 +81,36 @@ class ValidationResult:
 
     def add_error(self, message: str, location: str, suggestion: str = None):
         """Add an error-level issue."""
-        self.add_issue(ValidationIssue(
-            type=IssueType.ERROR,
-            message=message,
-            location=location,
-            suggestion=suggestion
-        ))
+        self.add_issue(
+            ValidationIssue(
+                type=IssueType.ERROR,
+                message=message,
+                location=location,
+                suggestion=suggestion,
+            )
+        )
 
     def add_warning(self, message: str, location: str, suggestion: str = None):
         """Add a warning-level issue."""
-        self.add_issue(ValidationIssue(
-            type=IssueType.WARNING,
-            message=message,
-            location=location,
-            suggestion=suggestion
-        ))
+        self.add_issue(
+            ValidationIssue(
+                type=IssueType.WARNING,
+                message=message,
+                location=location,
+                suggestion=suggestion,
+            )
+        )
 
     def add_suggestion(self, message: str, location: str, suggestion: str = None):
         """Add a suggestion-level issue."""
-        self.add_issue(ValidationIssue(
-            type=IssueType.SUGGESTION,
-            message=message,
-            location=location,
-            suggestion=suggestion
-        ))
+        self.add_issue(
+            ValidationIssue(
+                type=IssueType.SUGGESTION,
+                message=message,
+                location=location,
+                suggestion=suggestion,
+            )
+        )
 
     def format_for_cursor(self) -> str:
         """Format validation results for Cursor's chat interface."""
@@ -121,7 +129,10 @@ class ValidationResult:
         if error_count > 0:
             output = f"❌ **Plan validation failed** ({error_count} errors, {warning_count} warnings)\n\n"
         elif warning_count > 0:
-            output = f"⚠️ **Plan validation passed with warnings** ({warning_count} warnings, {suggestion_count} suggestions)\n\n"
+            output = (
+                f"⚠️ **Plan validation passed with warnings** "
+                f"({warning_count} warnings, {suggestion_count} suggestions)\n\n"
+            )
         else:
             output = f"✅ **Plan validation passed** ({suggestion_count} suggestions for improvement)\n\n"
 

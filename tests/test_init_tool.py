@@ -1,11 +1,10 @@
 """Tests for the dev_plan_init tool functionality."""
 
-import pytest
 import tempfile
-import yaml
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import os
+
+import pytest
+import yaml
 
 from cursor_plans_mcp.server import init_dev_planning
 
@@ -13,26 +12,28 @@ from cursor_plans_mcp.server import init_dev_planning
 class TestDevPlanInit:
     """Test the dev_plan_init MCP tool."""
 
-    def create_sample_context_file(self, temp_dir: str, project_name: str = "test-project") -> str:
+    def create_sample_context_file(
+        self, temp_dir: str, project_name: str = "test-project"
+    ) -> str:
         """Helper to create a sample context YAML file."""
         context_content = {
-            'project': {
-                'directory': temp_dir,
-                'name': project_name,
-                'type': 'python',
-                'description': 'Test project',
-                'objectives': ['Build a test application'],
-                'architecture_notes': ['Use clean architecture']
+            "project": {
+                "directory": temp_dir,
+                "name": project_name,
+                "type": "python",
+                "description": "Test project",
+                "objectives": ["Build a test application"],
+                "architecture_notes": ["Use clean architecture"],
             },
-            'context_files': {
-                'source': ['src/', '*.py'],
-                'docs': ['README.md'],
-                'config': ['pyproject.toml']
-            }
+            "context_files": {
+                "source": ["src/", "*.py"],
+                "docs": ["README.md"],
+                "config": ["pyproject.toml"],
+            },
         }
 
         context_path = Path(temp_dir) / "test.context.yaml"
-        with open(context_path, 'w') as f:
+        with open(context_path, "w") as f:
             yaml.dump(context_content, f)
 
         return str(context_path)
@@ -49,10 +50,7 @@ class TestDevPlanInit:
             # Create context file
             context_file = self.create_sample_context_file(temp_dir)
 
-            result = await init_dev_planning({
-                "context": context_file,
-                "reset": False
-            })
+            result = await init_dev_planning({"context": context_file, "reset": False})
 
             assert len(result) == 1
             assert "Development Planning Initialized" in result[0].text
@@ -77,10 +75,7 @@ class TestDevPlanInit:
             # Create context file
             context_file = self.create_sample_context_file(temp_dir)
 
-            result = await init_dev_planning({
-                "context": context_file,
-                "reset": True
-            })
+            result = await init_dev_planning({"context": context_file, "reset": True})
 
             assert len(result) == 1
             assert "Development Planning Reset Complete" in result[0].text
@@ -94,10 +89,9 @@ class TestDevPlanInit:
     @pytest.mark.asyncio
     async def test_init_dev_planning_missing_context_file(self):
         """Test error handling when context file is missing."""
-        result = await init_dev_planning({
-            "context": "/non/existent/context.yaml",
-            "reset": False
-        })
+        result = await init_dev_planning(
+            {"context": "/non/existent/context.yaml", "reset": False}
+        )
 
         assert len(result) == 1
         assert "Error" in result[0].text
@@ -106,9 +100,7 @@ class TestDevPlanInit:
     @pytest.mark.asyncio
     async def test_init_dev_planning_no_context_parameter(self):
         """Test error handling when no context parameter is provided."""
-        result = await init_dev_planning({
-            "reset": False
-        })
+        result = await init_dev_planning({"reset": False})
 
         assert len(result) == 1
         assert "Error" in result[0].text
@@ -122,10 +114,9 @@ class TestDevPlanInit:
             context_path = Path(temp_dir) / "invalid.context.yaml"
             context_path.write_text("invalid: yaml: content: [")
 
-            result = await init_dev_planning({
-                "context": str(context_path),
-                "reset": False
-            })
+            result = await init_dev_planning(
+                {"context": str(context_path), "reset": False}
+            )
 
             assert len(result) == 1
             assert "Error" in result[0].text
@@ -139,10 +130,9 @@ class TestDevPlanInit:
             context_path = Path(temp_dir) / "incomplete.context.yaml"
             context_path.write_text("context_files:\n  source: ['*.py']")
 
-            result = await init_dev_planning({
-                "context": str(context_path),
-                "reset": False
-            })
+            result = await init_dev_planning(
+                {"context": str(context_path), "reset": False}
+            )
 
             assert len(result) == 1
             assert "Error" in result[0].text
@@ -154,7 +144,9 @@ class TestDevPlanInit:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a comprehensive project structure
             (Path(temp_dir) / "src").mkdir()
-            (Path(temp_dir) / "src" / "main.py").write_text("from fastapi import FastAPI")
+            (Path(temp_dir) / "src" / "main.py").write_text(
+                "from fastapi import FastAPI"
+            )
             (Path(temp_dir) / "src" / "models.py").write_text("class User: pass")
             (Path(temp_dir) / "README.md").write_text("# Test Project")
             (Path(temp_dir) / "pyproject.toml").write_text("[project]\nname = 'test'")
@@ -162,10 +154,7 @@ class TestDevPlanInit:
             # Create context file
             context_file = self.create_sample_context_file(temp_dir, "test-scanning")
 
-            result = await init_dev_planning({
-                "context": context_file,
-                "reset": False
-            })
+            result = await init_dev_planning({"context": context_file, "reset": False})
 
             assert len(result) == 1
             assert "Development Planning Initialized" in result[0].text
@@ -179,37 +168,36 @@ class TestDevPlanInit:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create enhanced context file with objectives and architecture
             context_content = {
-                'project': {
-                    'directory': temp_dir,
-                    'name': 'feature-rich-project',
-                    'type': 'fastapi',
-                    'description': 'A comprehensive test project',
-                    'objectives': [
-                        'Build scalable API',
-                        'Implement authentication',
-                        'Add comprehensive testing'
+                "project": {
+                    "directory": temp_dir,
+                    "name": "feature-rich-project",
+                    "type": "fastapi",
+                    "description": "A comprehensive test project",
+                    "objectives": [
+                        "Build scalable API",
+                        "Implement authentication",
+                        "Add comprehensive testing",
                     ],
-                    'architecture_notes': [
-                        'Use repository pattern',
-                        'Implement dependency injection',
-                        'Follow clean architecture principles'
-                    ]
+                    "architecture_notes": [
+                        "Use repository pattern",
+                        "Implement dependency injection",
+                        "Follow clean architecture principles",
+                    ],
                 },
-                'context_files': {
-                    'source': ['src/'],
-                    'docs': ['README.md'],
-                    'config': ['requirements.txt']
-                }
+                "context_files": {
+                    "source": ["src/"],
+                    "docs": ["README.md"],
+                    "config": ["requirements.txt"],
+                },
             }
 
             context_path = Path(temp_dir) / "enhanced.context.yaml"
-            with open(context_path, 'w') as f:
+            with open(context_path, "w") as f:
                 yaml.dump(context_content, f)
 
-            result = await init_dev_planning({
-                "context": str(context_path),
-                "reset": False
-            })
+            result = await init_dev_planning(
+                {"context": str(context_path), "reset": False}
+            )
 
             assert len(result) == 1
             result_text = result[0].text
@@ -226,22 +214,21 @@ class TestDevPlanInit:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create context file pointing to non-existent directory
             context_content = {
-                'project': {
-                    'directory': '/non/existent/path',
-                    'name': 'test-project',
-                    'type': 'python'
+                "project": {
+                    "directory": "/non/existent/path",
+                    "name": "test-project",
+                    "type": "python",
                 },
-                'context_files': {'source': ['*.py']}
+                "context_files": {"source": ["*.py"]},
             }
 
             context_path = Path(temp_dir) / "bad.context.yaml"
-            with open(context_path, 'w') as f:
+            with open(context_path, "w") as f:
                 yaml.dump(context_content, f)
 
-            result = await init_dev_planning({
-                "context": str(context_path),
-                "reset": False
-            })
+            result = await init_dev_planning(
+                {"context": str(context_path), "reset": False}
+            )
 
             assert len(result) == 1
             assert "Error" in result[0].text

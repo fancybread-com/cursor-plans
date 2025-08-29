@@ -2,22 +2,21 @@
 Main execution engine for development plans.
 """
 
-import asyncio
-import os
-import shutil
-import yaml
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import yaml
 
 from .planner import DependencyResolver, ExecutionPlan
-from .snapshot import SnapshotManager, StateSnapshot
+from .snapshot import SnapshotManager
 
 
 class ExecutionStatus(Enum):
     """Execution status enumeration."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -28,6 +27,7 @@ class ExecutionStatus(Enum):
 @dataclass
 class ExecutionResult:
     """Result of plan execution."""
+
     success: bool
     status: ExecutionStatus
     executed_phases: List[str]
@@ -59,7 +59,9 @@ class PlanExecutor:
         self.snapshot_manager = SnapshotManager(self.project_dir)
         self.dependency_resolver = DependencyResolver()
 
-    async def execute_plan(self, plan_file: str, dry_run: bool = False) -> ExecutionResult:
+    async def execute_plan(
+        self, plan_file: str, dry_run: bool = False
+    ) -> ExecutionResult:
         """
         Execute a development plan.
 
@@ -94,7 +96,7 @@ class PlanExecutor:
 
         except Exception as e:
             # If execution fails, attempt rollback
-            if 'snapshot_id' in locals():
+            if "snapshot_id" in locals():
                 await self._rollback_on_failure(snapshot_id, str(e))
 
             return ExecutionResult(
@@ -102,7 +104,7 @@ class PlanExecutor:
                 status=ExecutionStatus.FAILED,
                 executed_phases=[],
                 error_message=str(e),
-                execution_time=(datetime.now() - start_time).total_seconds()
+                execution_time=(datetime.now() - start_time).total_seconds(),
             )
 
     async def rollback_to_snapshot(self, snapshot_id: str) -> ExecutionResult:
@@ -122,10 +124,12 @@ class PlanExecutor:
 
             return ExecutionResult(
                 success=success,
-                status=ExecutionStatus.ROLLED_BACK if success else ExecutionStatus.FAILED,
+                status=(
+                    ExecutionStatus.ROLLED_BACK if success else ExecutionStatus.FAILED
+                ),
                 executed_phases=[],
                 error_message=None if success else "Failed to restore snapshot",
-                execution_time=(datetime.now() - start_time).total_seconds()
+                execution_time=(datetime.now() - start_time).total_seconds(),
             )
 
         except Exception as e:
@@ -134,7 +138,7 @@ class PlanExecutor:
                 status=ExecutionStatus.FAILED,
                 executed_phases=[],
                 error_message=f"Rollback failed: {str(e)}",
-                execution_time=(datetime.now() - start_time).total_seconds()
+                execution_time=(datetime.now() - start_time).total_seconds(),
             )
 
     async def list_snapshots(self) -> List[Dict[str, Any]]:
@@ -147,7 +151,7 @@ class PlanExecutor:
         if not plan_path.exists():
             raise FileNotFoundError(f"Plan file not found: {plan_file}")
 
-        with open(plan_path, 'r') as f:
+        with open(plan_path, "r") as f:
             plan_data = yaml.safe_load(f)
 
         # Basic validation
@@ -158,7 +162,9 @@ class PlanExecutor:
 
         return plan_data
 
-    async def _dry_run_execution(self, execution_plan: ExecutionPlan, start_time: datetime) -> ExecutionResult:
+    async def _dry_run_execution(
+        self, execution_plan: ExecutionPlan, start_time: datetime
+    ) -> ExecutionResult:
         """Perform a dry run showing what would be executed."""
         changes = []
 
@@ -179,10 +185,12 @@ class PlanExecutor:
             status=ExecutionStatus.COMPLETED,
             executed_phases=[phase.name for phase in execution_plan.phases],
             changes_made=changes,
-            execution_time=(datetime.now() - start_time).total_seconds()
+            execution_time=(datetime.now() - start_time).total_seconds(),
         )
 
-    async def _execute_plan(self, execution_plan: ExecutionPlan, snapshot_id: str, start_time: datetime) -> ExecutionResult:
+    async def _execute_plan(
+        self, execution_plan: ExecutionPlan, snapshot_id: str, start_time: datetime
+    ) -> ExecutionResult:
         """Execute the development plan."""
         executed_phases = []
         changes_made = []
@@ -193,7 +201,9 @@ class PlanExecutor:
                 print(f"Executing phase: {phase_name}")
 
                 # Execute phase
-                phase_changes = await self._execute_phase(phase, execution_plan.plan_data)
+                phase_changes = await self._execute_phase(
+                    phase, execution_plan.plan_data
+                )
                 changes_made.extend(phase_changes)
                 executed_phases.append(phase_name)
 
@@ -205,7 +215,7 @@ class PlanExecutor:
                 executed_phases=executed_phases,
                 snapshot_id=snapshot_id,
                 changes_made=changes_made,
-                execution_time=(datetime.now() - start_time).total_seconds()
+                execution_time=(datetime.now() - start_time).total_seconds(),
             )
 
         except Exception as e:
@@ -216,11 +226,11 @@ class PlanExecutor:
                 success=False,
                 status=ExecutionStatus.FAILED,
                 executed_phases=executed_phases,
-                failed_phase=phase_name if 'phase_name' in locals() else None,
+                failed_phase=phase_name if "phase_name" in locals() else None,
                 error_message=str(e),
                 snapshot_id=snapshot_id,
                 changes_made=changes_made,
-                execution_time=(datetime.now() - start_time).total_seconds()
+                execution_time=(datetime.now() - start_time).total_seconds(),
             )
 
     async def _execute_phase(self, phase, plan_data: Dict[str, Any]) -> List[str]:
@@ -239,7 +249,9 @@ class PlanExecutor:
 
         # Handle file resources for this phase
         if "resources" in plan_data and "files" in plan_data["resources"]:
-            file_changes = await self._create_files(plan_data["resources"]["files"], phase_name)
+            file_changes = await self._create_files(
+                plan_data["resources"]["files"], phase_name
+            )
             changes.extend(file_changes)
 
         return changes
@@ -268,7 +280,9 @@ class PlanExecutor:
 
         return changes
 
-    async def _create_files(self, files: List[Dict[str, Any]], phase_name: str) -> List[str]:
+    async def _create_files(
+        self, files: List[Dict[str, Any]], phase_name: str
+    ) -> List[str]:
         """Create files based on plan resources."""
         changes = []
 
@@ -304,7 +318,9 @@ class PlanExecutor:
             try:
                 full_path.parent.mkdir(parents=True, exist_ok=True)
             except PermissionError as e:
-                raise PermissionError(f"Cannot create directory {full_path.parent}: {e}")
+                raise PermissionError(
+                    f"Cannot create directory {full_path.parent}: {e}"
+                )
             except OSError as e:
                 raise OSError(f"Failed to create directory {full_path.parent}: {e}")
 
@@ -313,7 +329,7 @@ class PlanExecutor:
 
             # Write file with proper error handling
             try:
-                with open(full_path, 'w') as f:
+                with open(full_path, "w") as f:
                     f.write(content)
             except PermissionError as e:
                 raise PermissionError(f"Cannot write to file {full_path}: {e}")
@@ -329,7 +345,9 @@ class PlanExecutor:
             # Catch any other unexpected errors
             raise Exception(f"Unexpected error creating file {file_path}: {e}")
 
-    def _generate_file_content(self, file_path: str, file_type: str, template: str) -> str:
+    def _generate_file_content(
+        self, file_path: str, file_type: str, template: str
+    ) -> str:
         """Generate file content based on template and type."""
         file_name = Path(file_path).name
 
@@ -488,8 +506,10 @@ public class AuthService : IAuthService
         # Create requirements.txt if it doesn't exist
         requirements_file = self.project_dir / "requirements.txt"
         if not requirements_file.exists():
-            content = self._generate_file_content("requirements.txt", "dependencies", "requirements")
-            with open(requirements_file, 'w') as f:
+            content = self._generate_file_content(
+                "requirements.txt", "dependencies", "requirements"
+            )
+            with open(requirements_file, "w") as f:
                 f.write(content)
             changes.append("Created: requirements.txt")
 
@@ -505,8 +525,10 @@ public class AuthService : IAuthService
 
         models_file = models_dir / "models.py"
         if not models_file.exists():
-            content = self._generate_file_content("src/models/models.py", "models", "fastapi_model")
-            with open(models_file, 'w') as f:
+            content = self._generate_file_content(
+                "src/models/models.py", "models", "fastapi_model"
+            )
+            with open(models_file, "w") as f:
                 f.write(content)
             changes.append("Created: src/models/models.py")
 
@@ -530,7 +552,7 @@ router = APIRouter()
 async def health_check():
     return {"status": "healthy"}
 """
-            with open(router_file, 'w') as f:
+            with open(router_file, "w") as f:
                 f.write(content)
             changes.append("Created: src/routes/main.py")
 
@@ -563,7 +585,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 """
-            with open(jwt_file, 'w') as f:
+            with open(jwt_file, "w") as f:
                 f.write(content)
             changes.append("Created: src/auth/jwt.py")
 
@@ -590,7 +612,7 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = security):
         raise HTTPException(status_code=401, detail="Invalid token")
     return credentials.credentials
 """
-            with open(auth_middleware_file, 'w') as f:
+            with open(auth_middleware_file, "w") as f:
                 f.write(content)
             changes.append("Created: src/middleware/auth.py")
 
@@ -602,21 +624,27 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = security):
 
         # Create test files
         test_files = [
-            ("tests/test_main.py", """import pytest
+            (
+                "tests/test_main.py",
+                """import pytest
 from fastapi.testclient import TestClient
 
 def test_health_check():
     # TODO: Implement health check test
     assert True
-"""),
-            ("tests/conftest.py", """import pytest
+""",
+            ),
+            (
+                "tests/conftest.py",
+                """import pytest
 from fastapi.testclient import TestClient
 
 @pytest.fixture
 def client():
     # TODO: Setup test client
     pass
-""")
+""",
+            ),
         ]
 
         for file_path, content in test_files:
@@ -624,7 +652,7 @@ def client():
             full_path.parent.mkdir(parents=True, exist_ok=True)
 
             if not full_path.exists():
-                with open(full_path, 'w') as f:
+                with open(full_path, "w") as f:
                     f.write(content)
                 changes.append(f"Created: {file_path}")
 

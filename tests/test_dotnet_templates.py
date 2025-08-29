@@ -1,8 +1,9 @@
 """Tests for .NET template functionality."""
 
-import pytest
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
+import pytest
 
 from cursor_plans_mcp.execution.engine import PlanExecutor
 from cursor_plans_mcp.server import init_dev_planning
@@ -22,11 +23,13 @@ class TestDotNetTemplates:
                 ("dotnet_controller", "BaseController.cs", "api_controller"),
                 ("ef_dbcontext", "AppDbContext.cs", "data_context"),
                 ("dotnet_service", "AuthService.cs", "service_interface"),
-                ("dotnet_csproj", "Project.csproj", "project_file")
+                ("dotnet_csproj", "Project.csproj", "project_file"),
             ]
 
             for template, file_path, file_type in dotnet_templates:
-                content = executor._generate_file_content(file_path, file_type, template)
+                content = executor._generate_file_content(
+                    file_path, file_type, template
+                )
 
                 # Verify content is generated
                 assert content is not None
@@ -52,13 +55,16 @@ class TestDotNetTemplates:
                     assert "Microsoft.NET.Sdk.Web" in content
                     assert "TargetFramework" in content
 
-                print(f"✅ Template '{template}' generates .NET content ({len(content)} chars)")
+                print(
+                    f"✅ Template '{template}' generates .NET content ({len(content)} chars)"
+                )
 
     @pytest.mark.asyncio
     async def test_dotnet_template_creation(self):
         """Test that dotnet template creates a valid plan."""
         with tempfile.TemporaryDirectory() as temp_dir:
             import os
+
             os.chdir(temp_dir)
 
             # Create a minimal context file
@@ -69,15 +75,17 @@ project:
   description: A test project
 """
             context_file = Path(temp_dir) / "context.yaml"
-            with open(context_file, 'w') as f:
+            with open(context_file, "w") as f:
                 f.write(context_content)
 
-            result = await init_dev_planning({
-                "context": str(context_file),
-                "name": "test-dotnet-api",
-                "template": "dotnet",
-                "project_directory": temp_dir,
-            })
+            result = await init_dev_planning(
+                {
+                    "context": str(context_file),
+                    "name": "test-dotnet-api",
+                    "template": "dotnet",
+                    "project_directory": temp_dir,
+                }
+            )
 
             assert len(result) == 1
             assert "Development Planning Initialized" in result[0].text
@@ -97,7 +105,9 @@ project:
             executor = PlanExecutor(temp_dir)
 
             # Test Program.cs template
-            program_content = executor._generate_file_content("Program.cs", "entry_point", "dotnet_program")
+            program_content = executor._generate_file_content(
+                "Program.cs", "entry_point", "dotnet_program"
+            )
 
             # Should contain essential .NET 8 Web API setup
             assert "WebApplication.CreateBuilder" in program_content
@@ -107,7 +117,9 @@ project:
             assert "app.Run" in program_content
 
             # Test csproj template
-            csproj_content = executor._generate_file_content("Project.csproj", "project_file", "dotnet_csproj")
+            csproj_content = executor._generate_file_content(
+                "Project.csproj", "project_file", "dotnet_csproj"
+            )
 
             # Should contain proper .NET 8 project configuration
             assert "Microsoft.NET.Sdk.Web" in csproj_content

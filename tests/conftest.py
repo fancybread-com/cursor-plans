@@ -2,12 +2,12 @@
 Pytest configuration and shared fixtures.
 """
 
-import pytest
 import tempfile
-import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 from unittest.mock import patch
+
+import pytest
 
 
 @pytest.fixture
@@ -24,42 +24,39 @@ def sample_basic_plan() -> Dict[str, Any]:
         "project": {
             "name": "test-project",
             "version": "1.0.0",
-            "description": "Test project"
+            "description": "Test project",
         },
         "target_state": {
-            "architecture": [
-                {"language": "python"},
-                {"framework": "FastAPI"}
-            ],
-            "features": ["api_endpoints", "testing"]
+            "architecture": [{"language": "python"}, {"framework": "FastAPI"}],
+            "features": ["api_endpoints", "testing"],
         },
         "resources": {
             "files": [
                 {
                     "path": "src/main.py",
                     "type": "entry_point",
-                    "template": "fastapi_main"
+                    "template": "fastapi_main",
                 },
                 {
                     "path": "src/models.py",
                     "type": "data_model",
-                    "template": "fastapi_model"
-                }
+                    "template": "fastapi_model",
+                },
             ],
-            "dependencies": ["fastapi", "uvicorn", "pydantic"]
+            "dependencies": ["fastapi", "uvicorn", "pydantic"],
         },
         "phases": {
             "foundation": {
                 "priority": 1,
                 "description": "Setup project foundation",
-                "tasks": ["setup_project_structure", "install_dependencies"]
+                "tasks": ["setup_project_structure", "install_dependencies"],
             },
             "development": {
                 "priority": 2,
                 "description": "Core development",
-                "tasks": ["create_models", "create_endpoints"]
-            }
-        }
+                "tasks": ["create_models", "create_endpoints"],
+            },
+        },
     }
 
 
@@ -67,43 +64,38 @@ def sample_basic_plan() -> Dict[str, Any]:
 def sample_invalid_plan() -> Dict[str, Any]:
     """Sample plan with validation issues."""
     return {
-        "project": {
-            "name": "invalid-project",
-            "version": "1.0.0"
-        },
-        "target_state": {
-            "architecture": [{"language": "python"}]
-        },
+        "project": {"name": "invalid-project", "version": "1.0.0"},
+        "target_state": {"architecture": [{"language": "python"}]},
         "resources": {
             "files": [
                 {
                     "path": "src/main.py",
                     "type": "entry_point",
-                    "template": "unknown_template"
+                    "template": "unknown_template",
                 },
                 {
                     "path": "src/main.py",  # Duplicate path
                     "type": "duplicate",
-                    "template": "another_template"
-                }
+                    "template": "another_template",
+                },
             ]
         },
         "phases": {
             "foundation": {
                 "priority": 1,
                 "description": "Foundation phase",
-                "tasks": ["setup_project"]
+                "tasks": ["setup_project"],
             },
             "development": {
                 "priority": 1,  # Duplicate priority
                 "description": "Development phase",
-                "dependencies": ["unknown_phase"]  # Invalid dependency
+                "dependencies": ["unknown_phase"],  # Invalid dependency
             },
             "empty_phase": {
                 "priority": 3
                 # No tasks - should trigger warning
-            }
-        }
+            },
+        },
     }
 
 
@@ -158,7 +150,7 @@ def sample_plan_file(temp_dir, sample_basic_plan):
     import yaml
 
     plan_file = temp_dir / "test.devplan"
-    with open(plan_file, 'w') as f:
+    with open(plan_file, "w") as f:
         yaml.dump(sample_basic_plan, f)
 
     return plan_file
@@ -172,7 +164,7 @@ def mock_existing_files(temp_dir):
         "src/models.py",
         "requirements.txt",
         "README.md",
-        ".gitignore"
+        ".gitignore",
     ]
 
     created_files = []
@@ -188,5 +180,5 @@ def mock_existing_files(temp_dir):
 @pytest.fixture(autouse=True)
 def reset_project_context():
     """Reset the global project context before each test."""
-    with patch('cursor_plans_mcp.server._project_context', {}):
+    with patch("cursor_plans_mcp.server._project_context", {}):
         yield

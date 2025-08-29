@@ -2,10 +2,10 @@
 Syntax validation for development plans.
 """
 
-import yaml
-from typing import Dict, Any
-from .base import BaseValidator
+from typing import Any, Dict
+
 from ..results import ValidationResult
+from .base import BaseValidator
 
 
 class SyntaxValidator(BaseValidator):
@@ -15,7 +15,9 @@ class SyntaxValidator(BaseValidator):
     def name(self) -> str:
         return "Syntax validation"
 
-    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
+    async def validate(
+        self, plan_data: Dict[str, Any], plan_file_path: str
+    ) -> ValidationResult:
         result = ValidationResult()
 
         # Check required top-level sections
@@ -26,7 +28,7 @@ class SyntaxValidator(BaseValidator):
                 result.add_error(
                     f"Missing required section: {section}",
                     f"Top level of {plan_file_path}",
-                    f"Add a '{section}:' section to your plan file"
+                    f"Add a '{section}:' section to your plan file",
                 )
 
         # Validate project section structure
@@ -36,7 +38,7 @@ class SyntaxValidator(BaseValidator):
                 result.add_error(
                     "Project section must be a dictionary",
                     f"project section in {plan_file_path}",
-                    "Use 'project:' followed by indented key-value pairs"
+                    "Use 'project:' followed by indented key-value pairs",
                 )
             else:
                 # Check required project fields
@@ -46,7 +48,7 @@ class SyntaxValidator(BaseValidator):
                         result.add_error(
                             f"Missing required project field: {field}",
                             f"project section in {plan_file_path}",
-                            f"Add '{field}: \"your-value\"' to the project section"
+                            f"Add '{field}: \"your-value\"' to the project section",
                         )
 
         # Validate phases section structure
@@ -56,7 +58,7 @@ class SyntaxValidator(BaseValidator):
                 result.add_error(
                     "Phases section must be a dictionary",
                     f"phases section in {plan_file_path}",
-                    "Use 'phases:' followed by phase names as keys"
+                    "Use 'phases:' followed by phase names as keys",
                 )
             else:
                 # Check each phase has required structure
@@ -65,13 +67,13 @@ class SyntaxValidator(BaseValidator):
                         result.add_error(
                             f"Phase '{phase_name}' must be a dictionary",
                             f"phases.{phase_name} in {plan_file_path}",
-                            f"Use '{phase_name}:' followed by indented phase configuration"
+                            f"Use '{phase_name}:' followed by indented phase configuration",
                         )
                     elif "priority" not in phase_data:
                         result.add_warning(
                             f"Phase '{phase_name}' missing priority",
                             f"phases.{phase_name} in {plan_file_path}",
-                            f"Add 'priority: N' to define execution order"
+                            "Add 'priority: N' to define execution order",
                         )
 
         # Validate resources section structure
@@ -81,7 +83,7 @@ class SyntaxValidator(BaseValidator):
                 result.add_error(
                     "Resources section must be a dictionary",
                     f"resources section in {plan_file_path}",
-                    "Use 'resources:' followed by resource categories"
+                    "Use 'resources:' followed by resource categories",
                 )
             elif "files" in resources:
                 files = resources["files"]
@@ -89,7 +91,7 @@ class SyntaxValidator(BaseValidator):
                     result.add_error(
                         "Resources.files must be a list",
                         f"resources.files in {plan_file_path}",
-                        "Use 'files:' followed by a list of file definitions"
+                        "Use 'files:' followed by a list of file definitions",
                     )
                 else:
                     # Check each file resource
@@ -98,13 +100,13 @@ class SyntaxValidator(BaseValidator):
                             result.add_error(
                                 f"File resource {i} must be a dictionary",
                                 f"resources.files[{i}] in {plan_file_path}",
-                                "Each file resource needs path, type, and other properties"
+                                "Each file resource needs path, type, and other properties",
                             )
                         elif "path" not in file_resource:
                             result.add_error(
                                 f"File resource {i} missing required 'path' field",
                                 f"resources.files[{i}] in {plan_file_path}",
-                                "Add 'path: \"file/path\"' to specify the file location"
+                                "Add 'path: \"file/path\"' to specify the file location",
                             )
 
         return result

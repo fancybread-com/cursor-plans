@@ -6,6 +6,6 @@ context, Cursor rules, and constraint validation.
 """
 
 from .engine import ValidationEngine
-from .results import ValidationResult, ValidationIssue, IssueType
+from .results import IssueType, ValidationIssue, ValidationResult
 
 __all__ = ["ValidationEngine", "ValidationResult", "ValidationIssue", "IssueType"]

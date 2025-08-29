@@ -2,12 +2,12 @@
 Individual validation modules.
 """
 
-from .syntax import SyntaxValidator
-from .schema import SchemaValidator
-from .logic import LogicValidator
+from .constraints import ConstraintValidator
 from .context import ContextValidator
 from .cursor_rules import CursorRulesValidator
-from .constraints import ConstraintValidator
+from .logic import LogicValidator
+from .schema import SchemaValidator
+from .syntax import SyntaxValidator
 
 __all__ = [
     "SyntaxValidator",
@@ -15,5 +15,5 @@ __all__ = [
     "LogicValidator",
     "ContextValidator",
     "CursorRulesValidator",
-    "ConstraintValidator"
+    "ConstraintValidator",
 ]

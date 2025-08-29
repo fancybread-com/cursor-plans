@@ -2,16 +2,17 @@
 Integration tests for MCP tools.
 """
 
-import pytest
 import os
-import yaml
 from pathlib import Path
-from unittest.mock import patch
+
+import pytest
+import yaml
+
 from cursor_plans_mcp.server import (
+    apply_dev_plan,
     init_dev_planning,
     prepare_dev_plan,
     validate_dev_plan,
-    apply_dev_plan
 )
 
 
@@ -30,13 +31,12 @@ project:
   description: A test project
 """
         context_file = temp_dir / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
-        result = await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        result = await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         assert len(result) == 1
         assert "Development Planning Initialized" in result[0].text
@@ -61,13 +61,12 @@ project:
   description: A FastAPI web service
 """
         context_file = Path(temp_dir) / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
-        result = await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        result = await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         assert len(result) == 1
         assert "Development Planning Initialized" in result[0].text
@@ -84,10 +83,9 @@ project:
         """Test initializing with context file."""
         os.chdir(temp_dir)
 
-        result = await init_dev_planning({
-            "context": str(sample_context_file),
-            "project_directory": str(temp_dir)
-        })
+        result = await init_dev_planning(
+            {"context": str(sample_context_file), "project_directory": str(temp_dir)}
+        )
 
         assert len(result) == 1
         assert "Development Planning Initialized" in result[0].text
@@ -109,20 +107,16 @@ project:
   description: A test project
 """
         context_file = temp_dir / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
         # Initialize first
-        await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         # Now prepare the plan
-        result = await prepare_dev_plan({
-            "name": "test-project",
-            "template": "basic"
-        })
+        result = await prepare_dev_plan({"name": "test-project", "template": "basic"})
 
         assert len(result) == 1
         assert "Development Plan Created" in result[0].text
@@ -153,20 +147,16 @@ project:
   description: A FastAPI web service
 """
         context_file = temp_dir / "context.yaml"
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
         # Initialize first
-        await init_dev_planning({
-            "context": str(context_file),
-            "project_directory": str(temp_dir)
-        })
+        await init_dev_planning(
+            {"context": str(context_file), "project_directory": str(temp_dir)}
+        )
 
         # Now prepare the plan
-        result = await prepare_dev_plan({
-            "name": "api-project",
-            "template": "fastapi"
-        })
+        result = await prepare_dev_plan({"name": "api-project", "template": "fastapi"})
 
         assert len(result) == 1
         assert "Development Plan Created" in result[0].text
@@ -190,10 +180,7 @@ project:
         """Test preparing a plan without initializing first."""
         os.chdir(temp_dir)
 
-        result = await prepare_dev_plan({
-            "name": "test-project",
-            "template": "basic"
-        })
+        result = await prepare_dev_plan({"name": "test-project", "template": "basic"})
 
         assert len(result) == 1
         assert "No project context found" in result[0].text
@@ -208,11 +195,13 @@ class TestPlanValidate:
         """Test validating a valid plan."""
         os.chdir(temp_dir)
 
-        result = await validate_dev_plan({
-            "plan_file": str(sample_plan_file),
-            "strict_mode": False,
-            "check_cursor_rules": False
-        })
+        result = await validate_dev_plan(
+            {
+                "plan_file": str(sample_plan_file),
+                "strict_mode": False,
+                "check_cursor_rules": False,
+            }
+        )
 
         assert len(result) == 1
         # Should either pass or have only warnings/suggestions
@@ -224,25 +213,31 @@ class TestPlanValidate:
         """Test validating a non-existent plan."""
         os.chdir(temp_dir)
 
-        result = await validate_dev_plan({
-            "plan_file": "nonexistent.devplan",
-            "strict_mode": False,
-            "check_cursor_rules": False
-        })
+        result = await validate_dev_plan(
+            {
+                "plan_file": "nonexistent.devplan",
+                "strict_mode": False,
+                "check_cursor_rules": False,
+            }
+        )
 
         assert len(result) == 1
         assert "Plan file not found" in result[0].text
 
     @pytest.mark.asyncio
-    async def test_validate_with_cursor_rules(self, sample_plan_file, sample_cursorrules, temp_dir):
+    async def test_validate_with_cursor_rules(
+        self, sample_plan_file, sample_cursorrules, temp_dir
+    ):
         """Test validation with Cursor rules."""
         os.chdir(temp_dir)
 
-        result = await validate_dev_plan({
-            "plan_file": str(sample_plan_file),
-            "strict_mode": False,
-            "check_cursor_rules": True
-        })
+        result = await validate_dev_plan(
+            {
+                "plan_file": str(sample_plan_file),
+                "strict_mode": False,
+                "check_cursor_rules": True,
+            }
+        )
 
         assert len(result) == 1
         result_text = result[0].text
@@ -256,30 +251,26 @@ class TestPlanValidate:
         os.chdir(temp_dir)
 
         # First validate in normal mode
-        normal_result = await validate_dev_plan({
-            "plan_file": str(sample_plan_file),
-            "strict_mode": False,
-            "check_cursor_rules": False
-        })
+        normal_result = await validate_dev_plan(
+            {
+                "plan_file": str(sample_plan_file),
+                "strict_mode": False,
+                "check_cursor_rules": False,
+            }
+        )
 
         # Then in strict mode
-        strict_result = await validate_dev_plan({
-            "plan_file": str(sample_plan_file),
-            "strict_mode": True,
-            "check_cursor_rules": False
-        })
+        strict_result = await validate_dev_plan(
+            {
+                "plan_file": str(sample_plan_file),
+                "strict_mode": True,
+                "check_cursor_rules": False,
+            }
+        )
 
         # Both should return results
         assert len(normal_result) == 1
         assert len(strict_result) == 1
-
-
-
-
-
-
-
-
 
 
 class TestErrorHandling:
@@ -288,7 +279,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_init_plan_invalid_template(self, temp_dir):
         """Test initializing plan with invalid template."""
-        os.chdir(temp_dir)        # Create a minimal context file
+        os.chdir(temp_dir)  # Create a minimal context file
         context_content = """
 project:
   name: test-project
@@ -297,16 +288,17 @@ project:
 """
         context_file = temp_dir / "context.yaml"
 
-        with open(context_file, 'w') as f:
+        with open(context_file, "w") as f:
             f.write(context_content)
 
-
-        result = await init_dev_planning({
-            "context": str(context_file),
-            "name": "test-project",
-            "template": "invalid_template",
-            "project_directory": str(temp_dir)
-        })
+        result = await init_dev_planning(
+            {
+                "context": str(context_file),
+                "name": "test-project",
+                "template": "invalid_template",
+                "project_directory": str(temp_dir),
+            }
+        )
 
         assert len(result) == 1
         # Should either create a plan or show an error message
@@ -321,11 +313,13 @@ project:
         invalid_file = temp_dir / "invalid.devplan"
         invalid_file.write_text("invalid: yaml: content: [unclosed")
 
-        result = await validate_dev_plan({
-            "plan_file": str(invalid_file),
-            "strict_mode": False,
-            "check_cursor_rules": False
-        })
+        result = await validate_dev_plan(
+            {
+                "plan_file": str(invalid_file),
+                "strict_mode": False,
+                "check_cursor_rules": False,
+            }
+        )
 
         assert len(result) == 1
         result_text = result[0].text
@@ -340,10 +334,9 @@ class TestExecutionTools:
         """Test dev_apply_plan tool with dry run."""
         os.chdir(temp_dir)
 
-        result = await apply_dev_plan({
-            'plan_file': 'nonexistent.devplan',
-            'dry_run': True
-        })
+        result = await apply_dev_plan(
+            {"plan_file": "nonexistent.devplan", "dry_run": True}
+        )
 
         assert len(result) == 1
         assert result[0].type == "text"
@@ -354,13 +347,10 @@ class TestExecutionTools:
         """Test dev_apply_plan tool with actual execution."""
         os.chdir(temp_dir)
 
-        result = await apply_dev_plan({
-            'plan_file': 'nonexistent.devplan',
-            'dry_run': False
-        })
+        result = await apply_dev_plan(
+            {"plan_file": "nonexistent.devplan", "dry_run": False}
+        )
 
         assert len(result) == 1
         assert result[0].type == "text"
         assert "error" in result[0].text.lower()
-
-

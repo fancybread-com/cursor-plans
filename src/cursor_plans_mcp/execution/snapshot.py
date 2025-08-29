@@ -2,19 +2,20 @@
 State snapshot management for rollback capabilities.
 """
 
+import hashlib
+import json
 import os
 import shutil
-import json
-import hashlib
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
 class StateSnapshot:
     """Represents a state snapshot."""
+
     id: str
     timestamp: datetime
     description: str
@@ -69,12 +70,12 @@ class SnapshotManager:
             "file_count": file_count,
             "total_size": total_size,
             "created_at": timestamp.isoformat(),
-            "project_files": await self._get_project_file_list()
+            "project_files": await self._get_project_file_list(),
         }
 
         # Save metadata
         metadata_file = snapshot_dir / "metadata.json"
-        with open(metadata_file, 'w') as f:
+        with open(metadata_file, "w") as f:
             json.dump(metadata, f, indent=2)
 
         # Update snapshots index
@@ -100,7 +101,7 @@ class SnapshotManager:
         try:
             # Read metadata
             metadata_file = snapshot_dir / "metadata.json"
-            with open(metadata_file, 'r') as f:
+            with open(metadata_file, "r") as f:
                 metadata = json.load(f)
 
             # Create backup of current state before restoration
@@ -111,10 +112,13 @@ class SnapshotManager:
             await self._restore_project_files(snapshot_dir, project_files)
 
             # Update metadata to indicate restoration
-            await self._update_snapshot_metadata(snapshot_id, {
-                "restored_at": datetime.now().isoformat(),
-                "backup_created": backup_id
-            })
+            await self._update_snapshot_metadata(
+                snapshot_id,
+                {
+                    "restored_at": datetime.now().isoformat(),
+                    "backup_created": backup_id,
+                },
+            )
 
             return True
 
@@ -130,7 +134,7 @@ class SnapshotManager:
             return snapshots
 
         try:
-            with open(self.metadata_file, 'r') as f:
+            with open(self.metadata_file, "r") as f:
                 snapshots_data = json.load(f)
 
             for snapshot_id, metadata in snapshots_data.items():
@@ -141,7 +145,7 @@ class SnapshotManager:
                     "file_count": metadata.get("file_count", 0),
                     "total_size": metadata.get("total_size", 0),
                     "restored_at": metadata.get("restored_at"),
-                    "backup_created": metadata.get("backup_created")
+                    "backup_created": metadata.get("backup_created"),
                 }
                 snapshots.append(snapshot_info)
 
@@ -184,7 +188,9 @@ class SnapshotManager:
     def _generate_snapshot_id(self) -> str:
         """Generate a unique snapshot ID."""
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        random_suffix = hashlib.md5(f"{timestamp}-{os.getpid()}".encode()).hexdigest()[:8]
+        random_suffix = hashlib.md5(f"{timestamp}-{os.getpid()}".encode()).hexdigest()[
+            :8
+        ]
         return f"snapshot-{timestamp}-{random_suffix}"
 
     async def _copy_project_files(self, snapshot_dir: Path) -> tuple[int, int]:
@@ -201,7 +207,7 @@ class SnapshotManager:
             ".pytest_cache",
             ".venv",
             "node_modules",
-            ".DS_Store"
+            ".DS_Store",
         ]
 
         # Use limited scope scanning to avoid system directories
@@ -261,7 +267,9 @@ class SnapshotManager:
 
         return file_count, total_size
 
-    async def _restore_project_files(self, snapshot_dir: Path, project_files: List[str]):
+    async def _restore_project_files(
+        self, snapshot_dir: Path, project_files: List[str]
+    ):
         """Restore project files from snapshot."""
         # First, remove existing files (except .devstate)
         for item in self.project_dir.iterdir():
@@ -307,7 +315,7 @@ class SnapshotManager:
             ".pytest_cache",
             ".venv",
             "node_modules",
-            ".DS_Store"
+            ".DS_Store",
         ]
 
         # Use limited scope scanning to avoid system directories
@@ -344,18 +352,18 @@ class SnapshotManager:
     def _ensure_metadata_file(self):
         """Ensure the snapshots metadata file exists."""
         if not self.metadata_file.exists():
-            with open(self.metadata_file, 'w') as f:
+            with open(self.metadata_file, "w") as f:
                 json.dump({}, f)
 
     async def _add_snapshot_to_index(self, snapshot_id: str, metadata: Dict[str, Any]):
         """Add snapshot to the metadata index."""
         try:
-            with open(self.metadata_file, 'r') as f:
+            with open(self.metadata_file, "r") as f:
                 snapshots_data = json.load(f)
 
             snapshots_data[snapshot_id] = metadata
 
-            with open(self.metadata_file, 'w') as f:
+            with open(self.metadata_file, "w") as f:
                 json.dump(snapshots_data, f, indent=2)
 
         except Exception as e:
@@ -364,28 +372,30 @@ class SnapshotManager:
     async def _remove_snapshot_from_index(self, snapshot_id: str):
         """Remove snapshot from the metadata index."""
         try:
-            with open(self.metadata_file, 'r') as f:
+            with open(self.metadata_file, "r") as f:
                 snapshots_data = json.load(f)
 
             if snapshot_id in snapshots_data:
                 del snapshots_data[snapshot_id]
 
-            with open(self.metadata_file, 'w') as f:
+            with open(self.metadata_file, "w") as f:
                 json.dump(snapshots_data, f, indent=2)
 
         except Exception as e:
             print(f"Failed to remove snapshot from index: {str(e)}")
 
-    async def _update_snapshot_metadata(self, snapshot_id: str, updates: Dict[str, Any]):
+    async def _update_snapshot_metadata(
+        self, snapshot_id: str, updates: Dict[str, Any]
+    ):
         """Update snapshot metadata."""
         try:
-            with open(self.metadata_file, 'r') as f:
+            with open(self.metadata_file, "r") as f:
                 snapshots_data = json.load(f)
 
             if snapshot_id in snapshots_data:
                 snapshots_data[snapshot_id].update(updates)
 
-            with open(self.metadata_file, 'w') as f:
+            with open(self.metadata_file, "w") as f:
                 json.dump(snapshots_data, f, indent=2)
 
         except Exception as e:
@@ -403,14 +413,10 @@ class SnapshotManager:
             return None
 
         try:
-            with open(metadata_file, 'r') as f:
+            with open(metadata_file, "r") as f:
                 metadata = json.load(f)
 
-            return {
-                "id": snapshot_id,
-                "directory": str(snapshot_dir),
-                **metadata
-            }
+            return {"id": snapshot_id, "directory": str(snapshot_dir), **metadata}
 
         except Exception as e:
             print(f"Failed to read snapshot info: {str(e)}")

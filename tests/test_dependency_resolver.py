@@ -3,6 +3,7 @@ Tests for the dependency resolver and execution planning.
 """
 
 import pytest
+
 from cursor_plans_mcp.execution import DependencyResolver, ExecutionPlan, Phase
 
 
@@ -22,31 +23,28 @@ class TestDependencyResolver:
             "target_state": {"architecture": []},
             "resources": {"files": []},
             "phases": {
-                "foundation": {
-                    "priority": 1,
-                    "tasks": ["setup_project"]
-                },
+                "foundation": {"priority": 1, "tasks": ["setup_project"]},
                 "data_layer": {
                     "priority": 2,
                     "dependencies": ["foundation"],
-                    "tasks": ["create_models"]
+                    "tasks": ["create_models"],
                 },
                 "api_layer": {
                     "priority": 3,
                     "dependencies": ["data_layer"],
-                    "tasks": ["create_endpoints"]
+                    "tasks": ["create_endpoints"],
                 },
                 "security": {
                     "priority": 4,
                     "dependencies": ["api_layer"],
-                    "tasks": ["implement_auth"]
+                    "tasks": ["implement_auth"],
                 },
                 "testing": {
                     "priority": 5,
                     "dependencies": ["security"],
-                    "tasks": ["setup_tests"]
-                }
-            }
+                    "tasks": ["setup_tests"],
+                },
+            },
         }
 
     @pytest.fixture
@@ -58,8 +56,8 @@ class TestDependencyResolver:
             "resources": {"files": []},
             "phases": {
                 "phase1": {"priority": 1, "tasks": ["task1"]},
-                "phase2": {"priority": 2, "tasks": ["task2"]}
-            }
+                "phase2": {"priority": 2, "tasks": ["task2"]},
+            },
         }
 
     def test_resolver_initialization(self, resolver):
@@ -90,7 +88,7 @@ class TestDependencyResolver:
         plan_data = {
             "phases": {
                 "valid_phase": {"priority": 1, "tasks": ["task1"]},
-                "invalid_phase": "not_a_dict"  # Invalid
+                "invalid_phase": "not_a_dict",  # Invalid
             }
         }
         phases = resolver._parse_phases(plan_data)
@@ -103,7 +101,10 @@ class TestDependencyResolver:
         plan_data = {
             "phases": {
                 "phase1": {"tasks": ["task1"]},  # No priority or dependencies
-                "phase2": {"priority": "invalid", "dependencies": "not_list"}  # Invalid types
+                "phase2": {
+                    "priority": "invalid",
+                    "dependencies": "not_list",
+                },  # Invalid types
             }
         }
         phases = resolver._parse_phases(plan_data)
@@ -127,7 +128,7 @@ class TestDependencyResolver:
         """Test dependency validation with missing phase."""
         phases = [
             Phase(name="phase1", data={}, priority=1, dependencies=[]),
-            Phase(name="phase2", data={}, priority=2, dependencies=["missing_phase"])
+            Phase(name="phase2", data={}, priority=2, dependencies=["missing_phase"]),
         ]
 
         with pytest.raises(ValueError, match="depends on unknown phase"):
@@ -137,7 +138,7 @@ class TestDependencyResolver:
         """Test dependency validation with circular dependencies."""
         phases = [
             Phase(name="phase1", data={}, priority=1, dependencies=["phase2"]),
-            Phase(name="phase2", data={}, priority=2, dependencies=["phase1"])
+            Phase(name="phase2", data={}, priority=2, dependencies=["phase1"]),
         ]
 
         with pytest.raises(ValueError, match="Circular dependency"):
@@ -148,7 +149,7 @@ class TestDependencyResolver:
         # Simple cycle: A -> B -> A
         phases = [
             Phase(name="A", data={}, priority=1, dependencies=["B"]),
-            Phase(name="B", data={}, priority=2, dependencies=["A"])
+            Phase(name="B", data={}, priority=2, dependencies=["A"]),
         ]
 
         assert resolver._has_cycles(phases) is True
@@ -159,7 +160,7 @@ class TestDependencyResolver:
         phases = [
             Phase(name="A", data={}, priority=1, dependencies=[]),
             Phase(name="B", data={}, priority=2, dependencies=["A"]),
-            Phase(name="C", data={}, priority=3, dependencies=["B"])
+            Phase(name="C", data={}, priority=3, dependencies=["B"]),
         ]
 
         assert resolver._has_cycles(phases) is False
@@ -172,7 +173,7 @@ class TestDependencyResolver:
             Phase(name="A", data={}, priority=1, dependencies=[]),
             Phase(name="B", data={}, priority=2, dependencies=["A"]),
             Phase(name="C", data={}, priority=3, dependencies=["B"]),
-            Phase(name="D", data={}, priority=4, dependencies=["C"])
+            Phase(name="D", data={}, priority=4, dependencies=["C"]),
         ]
         # Add cycle: C depends on B
         phases[2].dependencies.append("B")
@@ -191,7 +192,9 @@ class TestDependencyResolver:
         assert ordered_phases[0].name == "phase1"
         assert ordered_phases[1].name == "phase2"
 
-    def test_resolve_execution_order_with_dependencies(self, resolver, sample_plan_data):
+    def test_resolve_execution_order_with_dependencies(
+        self, resolver, sample_plan_data
+    ):
         """Test execution order resolution with dependencies."""
         phases = resolver._parse_phases(sample_plan_data)
         resolver._validate_dependencies(phases)
@@ -221,7 +224,9 @@ class TestDependencyResolver:
         phases = [
             Phase(name="A", data={}, priority=1, dependencies=[]),
             Phase(name="B", data={}, priority=3, dependencies=["A"]),
-            Phase(name="C", data={}, priority=2, dependencies=["A"])  # Lower priority than B
+            Phase(
+                name="C", data={}, priority=2, dependencies=["A"]
+            ),  # Lower priority than B
         ]
 
         ordered_phases = resolver._resolve_execution_order(phases)
@@ -256,8 +261,8 @@ class TestDependencyResolver:
             "resources": {"files": []},
             "phases": {
                 "A": {"priority": 1, "dependencies": ["B"]},
-                "B": {"priority": 2, "dependencies": ["A"]}
-            }
+                "B": {"priority": 2, "dependencies": ["A"]},
+            },
         }
 
         with pytest.raises(ValueError, match="Circular dependency"):
@@ -311,7 +316,7 @@ class TestPhase:
             name="test_phase",
             data={"priority": 1, "tasks": ["task1"]},
             priority=1,
-            dependencies=["dep1", "dep2"]
+            dependencies=["dep1", "dep2"],
         )
 
         assert phase.name == "test_phase"
@@ -336,7 +341,7 @@ class TestExecutionPlan:
         """Test ExecutionPlan initialization."""
         phases = [
             Phase(name="A", data={}, priority=1, dependencies=[]),
-            Phase(name="B", data={}, priority=2, dependencies=["A"])
+            Phase(name="B", data={}, priority=2, dependencies=["A"]),
         ]
         plan_data = {"project": {"name": "test"}}
 
