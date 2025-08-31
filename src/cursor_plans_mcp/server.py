@@ -322,8 +322,9 @@ async def prepare_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock
             )
         ]
 
-    project_path = Path(_project_context.get("project_directory", "."))
-    cursorplans_dir = project_path / ".cursorplans"
+    # Use the stored cursorplans_dir from context, or fall back to project directory
+    cursorplans_dir = Path(_project_context.get("cursorplans_dir", _project_context.get("project_directory", ".") + "/.cursorplans"))
+    project_path = cursorplans_dir.parent
 
     # Ensure .cursorplans directory exists
     if not cursorplans_dir.exists():
@@ -563,67 +564,198 @@ async def _create_plan_file(
 ) -> dict:
     """Helper function to create a plan file."""
     try:
-        # Generate plan content using the same logic as create_dev_plan
-        def generate_base_plan(name, project_type, project_description):
-            """Pass 1: Generate base plan structure"""
-            return BASE_PLAN_TEMPLATE.format(
-                name=name,
-                project_type=project_type,
-                project_description=project_description
-            )
+        # Load the full context configuration for rich context processing
+        context_config = None
+        if _project_context and _project_context.get("context_config_path"):
+            try:
+                with open(_project_context["context_config_path"], "r") as f:
+                    import yaml
+                    context_config = yaml.safe_load(f)
+            except Exception as e:
+                pass  # Fall back to basic plan generation
 
-        def apply_context_to_plan(
-            base_plan, objectives, architecture_notes, context_files
-        ):
-            """Pass 2: Apply context to enhance the plan"""
-            enhanced_plan = base_plan
-
-            # Add objectives section if we have objectives
-            if objectives:
-                objectives_yaml = "\n".join(f'    - "{obj}"' for obj in objectives)
-                objectives_section = f"""
-  objectives:
-{objectives_yaml}"""
-                enhanced_plan = enhanced_plan.replace(
-                    f'  description: "{project_description}"',
-                    f'  description: "{project_description}"{objectives_section}',
+        # Generate plan content using context-aware logic
+        def generate_context_aware_plan(name, project_type, project_description, context_config):
+            """Generate plan structure based on context configuration"""
+            if not context_config:
+                # Fall back to basic template
+                return BASE_PLAN_TEMPLATE.format(
+                    name=name,
+                    project_type=project_type,
+                    project_description=project_description
                 )
 
-            # Add architecture constraints if we have them
-            if architecture_notes:
-                arch_yaml = "\n".join(f'    - "{note}"' for note in architecture_notes)
-                architecture_section = f"""
-  architecture_constraints:
-{arch_yaml}"""
-                enhanced_plan = enhanced_plan.replace(
-                    (
-                        objectives_section
-                        if objectives
-                        else f'  description: "{project_description}"'
-                    ),
-                    (
-                        objectives_section
-                        if objectives
-                        else f'  description: "{project_description}"'
-                    )
-                    + architecture_section,
-                )
+            # Extract context sections
+            components = context_config.get("components", {})
+            languages = context_config.get("languages", {})
+            rules = context_config.get("rules", {})
+            testing = context_config.get("testing", {})
+            documentation = context_config.get("documentation", {})
 
-            return enhanced_plan
+            # Build features list from components and languages
+            features = []
+            if components:
+                for component_type, component_list in components.items():
+                    if isinstance(component_list, list):
+                        for component in component_list:
+                            if isinstance(component, dict) and "name" in component:
+                                features.append(component["name"])
+                    elif isinstance(component_list, dict):
+                        features.append(component_type)
 
-        # Generate plan content
-        base_plan = generate_base_plan(name, project_type, project_description)
-        plan_content = apply_context_to_plan(
-            base_plan, objectives, architecture_notes, context_files
-        )
+            # Add language support features
+            if languages:
+                features.extend([f"{lang}_support" for lang in languages.keys()])
 
-        # Add template-specific content
+            # Build resources from components and languages
+            resources_files = []
+            resources_dependencies = ["requests"]  # Default dependency
+
+            # Ensure we have at least one file resource
+            if not resources_files:
+                resources_files.append({
+                    "path": "README.md",
+                    "type": "documentation",
+                    "template": "basic_readme"
+                })
+
+            # Add component-based files
+            if components:
+                for component_type, component_list in components.items():
+                    if isinstance(component_list, list):
+                        for component in component_list:
+                            if isinstance(component, dict) and "path" in component:
+                                resources_files.append({
+                                    "path": f"{component['path']}/__init__.py",
+                                    "type": "component_init",
+                                    "template": "stub"  # Use stub template for placeholder files
+                                })
+
+            # Add language-specific files
+            if languages:
+                for lang_name, lang_config in languages.items():
+                    if isinstance(lang_config, dict) and "templates" in lang_config:
+                        for template_name in lang_config["templates"]:
+                            resources_files.append({
+                                "path": f"src/cursor_plans_mcp/templates/languages/{lang_name}/{template_name}",
+                                "type": "language_template",
+                                "template": "stub"  # Use stub template for placeholder files
+                            })
+
+            # Build phases based on components and context
+            phases = {
+                "foundation": {
+                    "priority": 1,
+                    "tasks": ["setup_project_structure", "create_component_directories"]
+                },
+                "language_detection": {
+                    "priority": 2,
+                    "dependencies": ["foundation"],
+                    "tasks": ["implement_language_detection", "add_file_pattern_support"]
+                },
+                "language_templates": {
+                    "priority": 3,
+                    "dependencies": ["foundation"],
+                    "tasks": ["create_language_templates", "implement_template_engine"]
+                },
+                "language_validation": {
+                    "priority": 4,
+                    "dependencies": ["foundation"],
+                    "tasks": ["implement_language_validators", "add_validation_rules"]
+                },
+                "mcp_integration": {
+                    "priority": 5,
+                    "dependencies": ["language_detection", "language_templates", "language_validation"],
+                    "tasks": ["create_mcp_tools", "implement_language_apis"]
+                },
+                "testing": {
+                    "priority": 6,
+                    "dependencies": ["mcp_integration"],
+                    "tasks": ["unit_tests", "integration_tests", "language_specific_tests"]
+                }
+            }
+
+            # Build validation rules
+            validation_rules = ["syntax_check"]
+            if rules:
+                if "code_quality" in rules:
+                    validation_rules.append("code_quality_check")
+                if "mcp_standards" in rules:
+                    validation_rules.append("mcp_compliance_check")
+                if "language_support" in rules:
+                    validation_rules.append("language_support_validation")
+
+            # Generate the enhanced plan
+            # Build the plan content piece by piece to avoid f-string syntax issues
+            plan_parts = [
+                f"""schema_version: "1.0"
+# Development Plan: {name}
+
+project:
+  name: "{name}"
+  version: "0.1.0"
+  description: "{project_description}"
+
+target_state:
+  architecture:
+    - language: "python"
+    - project_type: "{project_type}"
+    - components: {list(components.keys()) if components else []}
+    - supported_languages: {list(languages.keys()) if languages else []}
+
+  features:""",
+                chr(10).join(f"    - {feature}" for feature in features),
+                """
+resources:
+  files:
+""",
+                chr(10).join(f'    - path: "{file["path"]}"\n      type: "{file["type"]}"\n      template: "{file["template"]}"' for file in resources_files),
+                """
+  dependencies:
+""",
+                chr(10).join(f'    - "{dep}"' for dep in resources_dependencies),
+                """
+phases:
+"""
+            ]
+
+            # Add phases
+            for phase_name, phase_config in phases.items():
+                plan_parts.append(f"""  {phase_name}:
+    priority: {phase_config["priority"]}
+    dependencies: {phase_config.get("dependencies", [])}
+    tasks:
+""")
+                plan_parts.append(chr(10).join(f"      - {task}" for task in phase_config["tasks"]))
+
+            plan_parts.append("""
+validation:
+  pre_apply:
+""")
+            plan_parts.append(chr(10).join(f"    - {rule}" for rule in validation_rules))
+            plan_parts.append('"')
+
+            plan_content = "".join(plan_parts)
+
+            return plan_content
+
+        # Generate plan content using context-aware logic
         if template == "fastapi":
             plan_content = _get_fastapi_template(name)
         elif template == "dotnet":
             plan_content = _get_dotnet_template(name)
         elif template == "vuejs":
             plan_content = _get_vuejs_template(name)
+        elif template == "basic":
+            # Use basic template
+            plan_content = BASE_PLAN_TEMPLATE.format(
+                name=name,
+                project_type=project_type,
+                project_description=project_description
+            )
+        else:
+            # Use context-aware plan generation
+            plan_content = generate_context_aware_plan(name, project_type, project_description, context_config)
 
         # Validate plan content
         from .schema import validate_plan_content
@@ -1165,14 +1297,65 @@ async def apply_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
     dry_run = arguments.get("dry_run", False)
 
     try:
-        # If no specific path is provided, look in .cursorplans directory first
-        if plan_file == "./project.devplan":
-            cursorplans_path = Path(".cursorplans") / "project.devplan"
+                # Resolve plan file path
+        plan_path = Path(plan_file)
+
+                # If it's a relative path and doesn't exist, try looking in .cursorplans directory
+        if not plan_path.is_absolute() and not plan_path.exists():
+            # Try .cursorplans directory in current working directory (project-specific)
+            cursorplans_path = Path.cwd() / ".cursorplans" / plan_path.name
             if cursorplans_path.exists():
                 plan_file = str(cursorplans_path)
+            else:
+                # Try .cursorplans directory relative to the plan file (project-specific)
+                cursorplans_path = Path(".cursorplans") / plan_path.name
+                if cursorplans_path.exists():
+                    plan_file = str(cursorplans_path)
+                else:
+                    # Only as last resort, try user's home .cursorplans directory
+                    home_cursorplans = Path.home() / ".cursorplans" / plan_path.name
+                    if home_cursorplans.exists():
+                        plan_file = str(home_cursorplans)
 
-        # Initialize execution engine
-        executor = PlanExecutor()
+        # If still not found, try with .devplan extension if not already present
+        if not Path(plan_file).exists() and not plan_file.endswith(".devplan"):
+            plan_file_with_ext = f"{plan_file}.devplan"
+            if Path(plan_file_with_ext).exists():
+                plan_file = plan_file_with_ext
+
+        # Final check - if still not found, try .cursorplans directory with .devplan extension
+        if not Path(plan_file).exists():
+            # Try project-specific .cursorplans directory first
+            cursorplans_path = Path.cwd() / ".cursorplans" / f"{plan_path.stem}.devplan"
+            if cursorplans_path.exists():
+                plan_file = str(cursorplans_path)
+            else:
+                # Try relative .cursorplans directory
+                cursorplans_path = Path(".cursorplans") / f"{plan_path.stem}.devplan"
+                if cursorplans_path.exists():
+                    plan_file = str(cursorplans_path)
+                else:
+                    # Only as last resort, try user's home .cursorplans directory
+                    home_cursorplans = Path.home() / ".cursorplans" / f"{plan_path.stem}.devplan"
+                    if home_cursorplans.exists():
+                        plan_file = str(home_cursorplans)
+
+                # Initialize execution engine with the project directory
+        # Determine the project directory by finding the .cursorplans folder
+        # Start from the resolved plan file path and work backwards
+        plan_path = Path(plan_file)
+
+        # If the plan file is in a .cursorplans directory, use its parent as project directory
+        if ".cursorplans" in plan_path.parts:
+            # Find the index of .cursorplans in the path parts
+            cursorplans_index = plan_path.parts.index(".cursorplans")
+            # The project directory is everything before .cursorplans
+            project_dir = Path(*plan_path.parts[:cursorplans_index])
+        else:
+            # Fallback: use the directory containing the plan file
+            project_dir = plan_path.parent
+
+        executor = PlanExecutor(str(project_dir))
 
         # Execute the plan
         result = await executor.execute_plan(plan_file, dry_run=dry_run)
