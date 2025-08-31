@@ -112,6 +112,7 @@ class DevelopmentPlan(BaseModel):
             "fastapi_model",
             "requirements",
             "basic",
+            "stub",
             "dotnet_program",
             "dotnet_controller",
             "ef_dbcontext",

@@ -92,6 +92,7 @@ These templates are implemented in the execution engine and will generate actual
 
 #### Generic Templates
 - `basic` - Generic template fallback for any file type
+- `stub` - Stub/placeholder template for creating directory structure and basic files
 
 ### ⚠️ Referenced Templates (Not Yet Implemented)
 These templates are referenced in plan generation but **not yet implemented** in the execution engine. They will fall back to the `basic` template:
@@ -121,8 +122,28 @@ template: "custom_my_template"
 
 **Note**: Custom templates are not validated by the schema but should be implemented in the execution engine to generate actual content.
 
+### 📁 Stub Template Usage
+The `stub` template is specifically designed for creating placeholder files and directory structure:
+
+```yaml
+resources:
+  files:
+    - path: "src/my_module/__init__.py"
+      type: "component_init"
+      template: "stub"  # Creates basic __init__.py file
+    - path: "templates/my_template"
+      type: "template_file"
+      template: "stub"  # Creates template directory and basic file
+```
+
+**Use cases**:
+- Component initialization files (`__init__.py`)
+- Template directory structures
+- Placeholder files for future implementation
+- Scaffolding for complex project structures
+
 ### Template Implementation Status
-- **✅ Implemented**: 9 templates (fastapi_main, fastapi_model, requirements, basic, dotnet_program, dotnet_controller, ef_dbcontext, dotnet_service, dotnet_csproj)
+- **✅ Implemented**: 10 templates (fastapi_main, fastapi_model, requirements, basic, stub, dotnet_program, dotnet_controller, ef_dbcontext, dotnet_service, dotnet_csproj)
 - **⚠️ Referenced**: 11 templates (fall back to basic template)
 - **🔧 Custom**: Unlimited (with custom_ prefix)
 
@@ -133,6 +154,7 @@ template: "custom_my_template"
 - **Execution behavior**:
   - Implemented templates generate actual content
   - Referenced templates fall back to `basic` template (placeholder content)
+  - `stub` template creates directory structure and basic placeholder files
   - Custom templates must be implemented in the execution engine
 
 ## Validation Rules
