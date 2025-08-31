@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
 
 jobs:
   test:
@@ -62,13 +62,13 @@ jobs:
     - name: Run linting
       run: |
         # Run ruff for linting and formatting checks
-        ruff check src/ tests/ || true
-        ruff format --check src/ tests/ || true
+        ruff check src/ tests/
+        ruff format --check src/ tests/
 
     - name: Run type checking
       run: |
         # Run mypy for type checking
-        mypy src/cursor_plans_mcp/ || true
+        mypy src/cursor_plans_mcp/
 
   build:
     runs-on: ubuntu-latest
