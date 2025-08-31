@@ -686,7 +686,9 @@ async def _create_plan_file(
                     validation_rules.append("language_support_validation")
 
             # Generate the enhanced plan
-            plan_content = f"""schema_version: "1.0"
+            # Build the plan content piece by piece to avoid f-string syntax issues
+            plan_parts = [
+                f"""schema_version: "1.0"
 # Development Plan: {name}
 
 project:
@@ -701,27 +703,39 @@ target_state:
     - components: {list(components.keys()) if components else []}
     - supported_languages: {list(languages.keys()) if languages else []}
 
-  features:
-{chr(10).join(f"    - {feature}" for feature in features)}
-
+  features:""",
+                chr(10).join(f"    - {feature}" for feature in features),
+                """
 resources:
   files:
-{chr(10).join(f'    - path: "{file["path"]}"\n      type: "{file["type"]}"\n      template: "{file["template"]}"' for file in resources_files)}
-
+""",
+                chr(10).join(f'    - path: "{file["path"]}"\n      type: "{file["type"]}"\n      template: "{file["template"]}"' for file in resources_files),
+                """
   dependencies:
-{chr(10).join(f'    - "{dep}"' for dep in resources_dependencies)}
-
+""",
+                chr(10).join(f'    - "{dep}"' for dep in resources_dependencies),
+                """
 phases:
-{chr(10).join(f"""  {phase_name}:
+"""
+            ]
+
+            # Add phases
+            for phase_name, phase_config in phases.items():
+                plan_parts.append(f"""  {phase_name}:
     priority: {phase_config["priority"]}
     dependencies: {phase_config.get("dependencies", [])}
     tasks:
-{chr(10).join(f"      - {task}" for task in phase_config["tasks"])}""" for phase_name, phase_config in phases.items())}
+""")
+                plan_parts.append(chr(10).join(f"      - {task}" for task in phase_config["tasks"]))
 
+            plan_parts.append("""
 validation:
   pre_apply:
-{chr(10).join(f"    - {rule}" for rule in validation_rules)}
-"""
+""")
+            plan_parts.append(chr(10).join(f"    - {rule}" for rule in validation_rules))
+            plan_parts.append('"')
+
+            plan_content = "".join(plan_parts)
 
             return plan_content
 
@@ -732,6 +746,13 @@ validation:
             plan_content = _get_dotnet_template(name)
         elif template == "vuejs":
             plan_content = _get_vuejs_template(name)
+        elif template == "basic":
+            # Use basic template
+            plan_content = BASE_PLAN_TEMPLATE.format(
+                name=name,
+                project_type=project_type,
+                project_description=project_description
+            )
         else:
             # Use context-aware plan generation
             plan_content = generate_context_aware_plan(name, project_type, project_description, context_config)
