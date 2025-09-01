@@ -31,7 +31,7 @@ class LogicValidator(BaseValidator):
 
         return result
 
-    def _validate_phase_dependencies(self, phases: Dict[str, Any], plan_file_path: str, result: ValidationResult):
+    def _validate_phase_dependencies(self, phases: Any, plan_file_path: str, result: ValidationResult):
         """Check for circular dependencies and invalid phase references."""
         if not isinstance(phases, dict):
             return
@@ -66,12 +66,11 @@ class LogicValidator(BaseValidator):
             rec_stack.add(node)
 
             for neighbor in dependencies.get(node, []):
-                if neighbor in phase_names:  # Only check valid phases
-                    if neighbor not in visited:
-                        if has_cycle(neighbor, visited, rec_stack):
-                            return True
-                    elif neighbor in rec_stack:
+                if neighbor not in visited:
+                    if has_cycle(neighbor, visited, rec_stack):
                         return True
+                elif neighbor in rec_stack:
+                    return True
 
             rec_stack.remove(node)
             return False

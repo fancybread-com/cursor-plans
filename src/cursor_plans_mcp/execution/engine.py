@@ -151,6 +151,10 @@ class PlanExecutor:
         with open(plan_path, "r") as f:
             plan_data = yaml.safe_load(f)
 
+        # Ensure plan_data is a dict
+        if not isinstance(plan_data, dict):
+            raise ValueError("Plan file must contain valid YAML with a dictionary structure")
+
         # Basic validation
         required_sections = ["project", "target_state", "resources", "phases"]
         for section in required_sections:

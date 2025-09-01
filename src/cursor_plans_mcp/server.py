@@ -270,7 +270,7 @@ def main(port: int, transport: str) -> int:
         sse = SseServerTransport("/messages/")
 
         async def handle_sse(request: Request):
-            async with sse.connect_sse(request.scope, request.receive, request._send) as streams:  # type: ignore[reportPrivateUsage]
+            async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
                 await app.run(streams[0], streams[1], app.create_initialization_options())
             return Response()
 

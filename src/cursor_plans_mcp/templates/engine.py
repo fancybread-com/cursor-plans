@@ -23,7 +23,10 @@ class TemplateEngine:
             raise ValueError(f"Template '{template_name}' not found")
 
         template = self.templates[template_name]
-        return template.render(**parameters)
+        result = template.render(**parameters)
+        if not isinstance(result, str):
+            raise ValueError(f"Template '{template_name}' rendered non-string content")
+        return result
 
     def validate_parameters(self, template_name: str, parameters: Dict[str, Any]) -> List[str]:
         """Validate parameters against template requirements."""
@@ -37,11 +40,14 @@ class TemplateEngine:
         """Extract required parameters from template."""
         # This is a simplified approach - in practice you'd want more robust parsing
         # Get the template source by rendering with empty context and capturing the original
+        # Look for {{ param }} patterns
+        import re
+
         try:
             # Try to get the source from the template's internal structure
             content = str(template)
-            # Look for {{ param }} patterns
-            import re
+            # Ensure content is a string (should always be true, but mypy needs this)
+            assert isinstance(content, str)
 
             params = re.findall(r"\{\{\s*(\w+)\s*\}\}", content)
             return list(set(params))

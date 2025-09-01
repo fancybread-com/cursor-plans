@@ -15,20 +15,32 @@ class CSharpCommands:
         config_path = pathlib.Path(__file__).parent / "config.yaml"
         if config_path.exists():
             with open(config_path, "r") as f:
-                return yaml.safe_load(f)
+                config = yaml.safe_load(f)
+                if isinstance(config, dict):
+                    return config
         return {}
 
     @staticmethod
     def get_supported_frameworks() -> List[str]:
         """Get supported framework versions from config."""
         config = CSharpCommands._load_config()
-        return config.get("frameworks", {}).get("supported", ["net8.0", "net9.0"])
+        frameworks = config.get("frameworks", {})
+        if isinstance(frameworks, dict):
+            supported = frameworks.get("supported")
+            if isinstance(supported, list):
+                return supported
+        return ["net8.0", "net9.0"]
 
     @staticmethod
     def get_default_framework() -> str:
         """Get default framework version from config."""
         config = CSharpCommands._load_config()
-        return config.get("frameworks", {}).get("default", "net8.0")
+        frameworks = config.get("frameworks", {})
+        if isinstance(frameworks, dict):
+            default = frameworks.get("default")
+            if isinstance(default, str):
+                return default
+        return "net8.0"
 
     @staticmethod
     def get_project_commands() -> Dict[str, Dict[str, Any]]:

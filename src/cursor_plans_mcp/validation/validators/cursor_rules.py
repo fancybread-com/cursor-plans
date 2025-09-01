@@ -381,10 +381,12 @@ class CursorRulesValidator(BaseValidator):
             if isinstance(arch, list):
                 for item in arch:
                     if isinstance(item, dict) and "framework" in item:
-                        return item["framework"]
+                        framework = item["framework"]
+                        if isinstance(framework, str):
+                            return framework
         return None
 
-    def _extract_naming_patterns(self, cursor_rules: str) -> Dict[str, str]:
+    def _extract_naming_patterns(self, cursor_rules: str) -> Dict[str, Any]:
         """Extract naming patterns from Cursor rules text."""
         patterns = {}
 
