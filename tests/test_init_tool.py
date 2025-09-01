@@ -113,8 +113,8 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
-                    assert "Error" in result[0].text  # type: ignore[attr-defined]
-        assert "Invalid YAML" in result[0].text  # type: ignore[attr-defined]
+            assert "Error" in result[0].text  # type: ignore[attr-defined]
+            assert "Invalid YAML" in result[0].text  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_init_dev_planning_missing_project_section(self):
@@ -127,8 +127,8 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
-                    assert "Error" in result[0].text  # type: ignore[attr-defined]
-        assert "Missing 'project' section" in result[0].text  # type: ignore[attr-defined]
+            assert "Error" in result[0].text  # type: ignore[attr-defined]
+            assert "Missing 'project' section" in result[0].text  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_init_dev_planning_context_file_scanning(self):
