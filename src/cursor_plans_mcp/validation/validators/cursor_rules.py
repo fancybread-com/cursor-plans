@@ -129,7 +129,7 @@ class CursorRulesValidator(BaseValidator):
 
                             # Check against naming patterns
                             for pattern_name, pattern_regex in naming_patterns.items():
-                                if not re.match(pattern_regex, file_name):
+                                if isinstance(pattern_regex, str) and not re.match(pattern_regex, file_name):
                                     file_type = file_resource.get("type", "file")
                                     if pattern_name.lower() in file_type.lower():
                                         result.add_warning(

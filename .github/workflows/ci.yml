@@ -67,7 +67,7 @@ jobs:
 
     - name: Run type checking
       run: |
-        # Run mypy for type checking
+        # Run mypy for type checking using pyproject.toml configuration
         mypy src/cursor_plans_mcp/
 
   build:
