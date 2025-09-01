@@ -58,7 +58,7 @@ class DependencyResolver:
 
     def _parse_phases(self, plan_data: Dict[str, Any]) -> List[Phase]:
         """Parse phases from plan data."""
-        phases = []
+        phases: List[Phase] = []
 
         if "phases" not in plan_data:
             return phases
@@ -160,7 +160,7 @@ class DependencyResolver:
         from queue import PriorityQueue
 
         # Queue of (priority, phase_name) tuples
-        queue = PriorityQueue()
+        queue: PriorityQueue = PriorityQueue()
 
         # Add phases with no dependencies
         for phase in phases:

@@ -76,7 +76,7 @@ class LogicValidator(BaseValidator):
             rec_stack.remove(node)
             return False
 
-        visited = set()
+        visited: set[str] = set()
         for phase_name in phase_names:
             if phase_name not in visited:
                 if has_cycle(phase_name, visited, set()):
@@ -97,7 +97,7 @@ class LogicValidator(BaseValidator):
             return
 
         # Track file paths to detect conflicts
-        file_paths = {}
+        file_paths: Dict[str, int] = {}
 
         for i, file_resource in enumerate(files):
             if not isinstance(file_resource, dict) or "path" not in file_resource:

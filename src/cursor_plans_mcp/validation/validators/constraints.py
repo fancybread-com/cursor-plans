@@ -150,7 +150,7 @@ class ConstraintValidator(BaseValidator):
         if constraint_name == "unique_file_paths":
             if "resources" in plan_data and isinstance(plan_data["resources"], dict):
                 if "files" in plan_data["resources"] and isinstance(plan_data["resources"]["files"], list):
-                    file_paths = {}
+                    file_paths: Dict[str, int] = {}
                     for i, file_resource in enumerate(plan_data["resources"]["files"]):
                         if isinstance(file_resource, dict) and "path" in file_resource:
                             path = file_resource["path"]

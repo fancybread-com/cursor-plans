@@ -128,7 +128,7 @@ class SnapshotManager:
 
     async def list_snapshots(self) -> List[Dict[str, Any]]:
         """List all available snapshots."""
-        snapshots = []
+        snapshots: List[Dict[str, Any]] = []
 
         if not self.metadata_file.exists():
             return snapshots
