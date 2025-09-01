@@ -323,7 +323,10 @@ async def prepare_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock
         ]
 
     # Use the stored cursorplans_dir from context, or fall back to project directory
-    cursorplans_dir = Path(_project_context.get("cursorplans_dir", _project_context.get("project_directory", ".") + "/.cursorplans"))
+    cursorplans_dir = Path(
+        _project_context.get("cursorplans_dir",
+                           _project_context.get("project_directory", ".") + "/.cursorplans")
+    )
     project_path = cursorplans_dir.parent
 
     # Ensure .cursorplans directory exists
@@ -571,7 +574,7 @@ async def _create_plan_file(
                 with open(_project_context["context_config_path"], "r") as f:
                     import yaml
                     context_config = yaml.safe_load(f)
-            except Exception as e:
+            except Exception:
                 pass  # Fall back to basic plan generation
 
         # Generate plan content using context-aware logic
@@ -589,8 +592,6 @@ async def _create_plan_file(
             components = context_config.get("components", {})
             languages = context_config.get("languages", {})
             rules = context_config.get("rules", {})
-            testing = context_config.get("testing", {})
-            documentation = context_config.get("documentation", {})
 
             # Build features list from components and languages
             features = []
@@ -709,7 +710,10 @@ target_state:
 resources:
   files:
 """,
-                chr(10).join(f'    - path: "{file["path"]}"\n      type: "{file["type"]}"\n      template: "{file["template"]}"' for file in resources_files),
+                chr(10).join(
+                    f'    - path: "{file["path"]}"\n      type: "{file["type"]}"\n      template: "{file["template"]}"'
+                    for file in resources_files
+                ),
                 """
   dependencies:
 """,

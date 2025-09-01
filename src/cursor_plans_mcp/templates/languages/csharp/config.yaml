@@ -1,0 +1,47 @@
+# C# Project Generation Configuration
+
+# Default framework versions
+frameworks:
+  default: "net8.0"
+  supported: ["net8.0", "net9.0"]
+
+# Project type configurations
+project_types:
+  console:
+    implicit_usings: true
+    nullable: true
+
+  classlib:
+    implicit_usings: true
+    nullable: true
+
+  webapi:
+    implicit_usings: true
+    nullable: true
+    https: true
+    swagger: true
+
+  mvc:
+    implicit_usings: true
+    nullable: true
+    https: true
+
+  blazor:
+    implicit_usings: true
+    nullable: true
+    https: true
+
+  xunit:
+    implicit_usings: true
+    nullable: true
+
+  mstest:
+    implicit_usings: true
+    nullable: true
+
+# Post-generation customizations
+customizations:
+  default_namespace: "{project_name}"
+  add_gitignore: true
+  add_readme: true
+  add_license: false
