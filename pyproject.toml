@@ -49,6 +49,7 @@ packages = ["src/cursor_plans_mcp"]
 include = ["src/cursor_plans_mcp"]
 venvPath = "."
 venv = ".venv"
+reportAttributeAccessIssue = "none"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

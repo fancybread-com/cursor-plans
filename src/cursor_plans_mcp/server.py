@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional
 
 import anyio
 import click
@@ -1070,11 +1070,11 @@ async def load_context_file(context_file_path: str) -> list[str]:
 
 
 async def detect_existing_codebase(
-    directory: str, context_files: list[str] = None, suggest_name: bool = True
+    directory: str, context_files: Optional[list[str]] = None, suggest_name: bool = True
 ) -> dict[str, Any]:
     """Detect the framework and structure of an existing codebase."""
     current_dir = Path(directory)
-    detected_info = {
+    detected_info: Dict[str, Any] = {
         "framework": None,
         "language": None,
         "suggested_name": None,
@@ -1182,7 +1182,8 @@ async def detect_existing_codebase(
             # Check if it's specifically FastAPI
             try:
                 if "requirements.txt" in file_names:
-                    with open(current_dir / "requirements.txt", "r") as f:
+                    reqs_path = current_dir / "requirements.txt"
+                    with open(reqs_path, "r") as f:
                         reqs = f.read().lower()
                         if "fastapi" in reqs:
                             detected_info["framework"] = "fastapi"
@@ -1215,7 +1216,8 @@ async def detect_existing_codebase(
 
         for pattern in key_patterns:
             matches = list(current_dir.glob(pattern))
-            detected_info["key_files"].extend([str(f.relative_to(current_dir)) for f in matches])
+            if isinstance(detected_info["key_files"], list):
+                detected_info["key_files"].extend([str(f.relative_to(current_dir)) for f in matches])
 
     except Exception as e:
         print(f"Error detecting codebase: {e}")

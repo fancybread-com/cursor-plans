@@ -51,9 +51,9 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": context_file, "reset": False})
 
             assert len(result) == 1
-            assert "Development Planning Initialized" in result[0].text
-            assert "test-project" in result[0].text
-            assert temp_dir in result[0].text
+            assert "Development Planning Initialized" in result[0].text  # type: ignore[attr-defined]
+            assert "test-project" in result[0].text  # type: ignore[attr-defined]
+            assert temp_dir in result[0].text  # type: ignore[attr-defined]
 
             # Check that .cursorplans directory was created
             cursorplans_dir = Path(temp_dir) / ".cursorplans"
@@ -76,8 +76,8 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": context_file, "reset": True})
 
             assert len(result) == 1
-            assert "Development Planning Reset Complete" in result[0].text
-            assert "reset" in result[0].text.lower()
+            assert "Development Planning Reset Complete" in result[0].text  # type: ignore[attr-defined]
+            assert "reset" in result[0].text.lower()  # type: ignore[attr-defined]
 
             # Check that .cursorplans directory still exists but old files are gone
             assert cursorplans_dir.exists()
@@ -90,8 +90,8 @@ class TestDevPlanInit:
         result = await init_dev_planning({"context": "/non/existent/context.yaml", "reset": False})
 
         assert len(result) == 1
-        assert "Error" in result[0].text
-        assert "Context file not found" in result[0].text
+        assert "Error" in result[0].text  # type: ignore[attr-defined]
+        assert "Context file not found" in result[0].text  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_init_dev_planning_no_context_parameter(self):
@@ -99,8 +99,8 @@ class TestDevPlanInit:
         result = await init_dev_planning({"reset": False})
 
         assert len(result) == 1
-        assert "Error" in result[0].text
-        assert "Context file path is required" in result[0].text
+        assert "Error" in result[0].text  # type: ignore[attr-defined]
+        assert "Context file path is required" in result[0].text  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_init_dev_planning_invalid_yaml(self):
@@ -113,8 +113,8 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
-            assert "Error" in result[0].text
-            assert "Invalid YAML" in result[0].text
+                    assert "Error" in result[0].text  # type: ignore[attr-defined]
+        assert "Invalid YAML" in result[0].text  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_init_dev_planning_missing_project_section(self):
@@ -127,8 +127,8 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
-            assert "Error" in result[0].text
-            assert "Missing 'project' section" in result[0].text
+                    assert "Error" in result[0].text  # type: ignore[attr-defined]
+        assert "Missing 'project' section" in result[0].text  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_init_dev_planning_context_file_scanning(self):
@@ -147,10 +147,10 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": context_file, "reset": False})
 
             assert len(result) == 1
-            assert "Development Planning Initialized" in result[0].text
-            assert "Context Files Found" in result[0].text
-            assert "source: src/main.py" in result[0].text
-            assert "docs: README.md" in result[0].text
+            assert "Development Planning Initialized" in result[0].text  # type: ignore[attr-defined]
+            assert "Context Files Found" in result[0].text  # type: ignore[attr-defined]
+            assert "source: src/main.py" in result[0].text  # type: ignore[attr-defined]
+            assert "docs: README.md" in result[0].text  # type: ignore[attr-defined]
 
     @pytest.mark.asyncio
     async def test_init_dev_planning_with_objectives_and_architecture(self):
@@ -188,7 +188,7 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
-            result_text = result[0].text
+            result_text = result[0].text  # type: ignore[attr-defined]
             assert "Development Planning Initialized" in result_text
             assert "Project Objectives" in result_text
             assert "Build scalable API" in result_text
@@ -217,5 +217,5 @@ class TestDevPlanInit:
             result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
-            assert "Error" in result[0].text
-            assert "Project directory does not exist" in result[0].text
+            assert "Error" in result[0].text  # type: ignore[attr-defined]
+            assert "Project directory does not exist" in result[0].text  # type: ignore[attr-defined]

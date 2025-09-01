@@ -2,7 +2,7 @@
 Main execution engine for development plans.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -35,7 +35,7 @@ class ExecutionResult:
     error_message: Optional[str] = None
     snapshot_id: Optional[str] = None
     execution_time: Optional[float] = None
-    changes_made: List[str] = None
+    changes_made: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.changes_made is None:
@@ -72,6 +72,7 @@ class PlanExecutor:
         """
         start_time = datetime.now()
 
+        snapshot_id = None
         try:
             # Load and validate plan
             plan_data = await self._load_plan(plan_file)
@@ -94,7 +95,7 @@ class PlanExecutor:
 
         except Exception as e:
             # If execution fails, attempt rollback
-            if "snapshot_id" in locals():
+            if snapshot_id is not None:
                 await self._rollback_on_failure(snapshot_id, str(e))
 
             return ExecutionResult(
@@ -188,6 +189,7 @@ class PlanExecutor:
         """Execute the development plan."""
         executed_phases = []
         changes_made = []
+        phase_name = None
 
         try:
             for phase in execution_plan.phases:

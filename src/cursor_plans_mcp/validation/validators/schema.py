@@ -94,7 +94,7 @@ class SchemaValidator(BaseValidator):
 
         return result
 
-    def _get_suggestion_for_error(self, error: Dict[str, Any]) -> str:
+    def _get_suggestion_for_error(self, error: Any) -> str:
         """Generate helpful suggestions based on Pydantic error type."""
         error_type = error.get("type", "")
         field = error.get("loc", [])[-1] if error.get("loc") else ""
