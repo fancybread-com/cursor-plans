@@ -44,9 +44,7 @@ class TestPermissionHandling:
         executor = PlanExecutor(temp_dir)
 
         # Mock the directory creation to simulate a permission error
-        with patch(
-            "pathlib.Path.mkdir", side_effect=PermissionError("Permission denied")
-        ):
+        with patch("pathlib.Path.mkdir", side_effect=PermissionError("Permission denied")):
             with pytest.raises(PermissionError) as exc_info:
                 await executor._create_file("subdir/test.py", "file", "basic")
 
@@ -61,9 +59,7 @@ class TestPermissionHandling:
         files = [{"path": "test.py", "type": "file", "template": "basic"}]
 
         # Mock the file creation to simulate a permission error
-        with patch.object(
-            executor, "_create_file", side_effect=PermissionError("Permission denied")
-        ):
+        with patch.object(executor, "_create_file", side_effect=PermissionError("Permission denied")):
             with pytest.raises(PermissionError) as exc_info:
                 await executor._create_files(files, "test_phase")
 
@@ -96,13 +92,9 @@ resources:
         with patch("src.cursor_plans_mcp.server.PlanExecutor") as mock_executor_class:
             mock_executor = MagicMock()
             mock_executor_class.return_value = mock_executor
-            mock_executor.execute_plan.side_effect = PermissionError(
-                "Cannot write to file src/main.py"
-            )
+            mock_executor.execute_plan.side_effect = PermissionError("Cannot write to file src/main.py")
 
-            result = await apply_dev_plan(
-                {"plan_file": str(plan_file), "dry_run": False}
-            )
+            result = await apply_dev_plan({"plan_file": str(plan_file), "dry_run": False})
 
             # Check that the error is properly formatted
             assert "❌ **Permission Error:**" in result[0].text
@@ -139,9 +131,7 @@ resources:
             mock_executor_class.return_value = mock_executor
             mock_executor.execute_plan.side_effect = OSError("No space left on device")
 
-            result = await apply_dev_plan(
-                {"plan_file": str(plan_file), "dry_run": False}
-            )
+            result = await apply_dev_plan({"plan_file": str(plan_file), "dry_run": False})
 
             # Check that the error is properly formatted
             assert "❌ **OS Error:**" in result[0].text

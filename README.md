@@ -12,7 +12,7 @@ Cursor Plans MCP brings Infrastructure-as-Code principles to application develop
 - **State Tracking**: Compare current vs desired state
 - **Multi-Layer Validation**: Syntax, logic, context, and team standards validation
 - **Cursor Rules Integration**: Validate against `.cursorrules` coding standards
-- **Template System**: Reusable code generation patterns
+- **Template System**: Reusable code generation patterns for multiple languages
 - **Context Management**: Story-specific file context for better planning
 
 ## Installation
@@ -79,16 +79,6 @@ plan_apply plan_file="my-project.devplan" dry_run=true
 plan_apply plan_file="my-project.devplan"
 ```
 
-### 5. Manage State
-
-```bash
-# List available snapshots
-# Note: Snapshot management tools are currently being refactored
-# For now, use the core planning tools above
-```
-
-
-
 ## Important Parameters
 
 ### project_directory
@@ -153,21 +143,73 @@ phases:
       - install_dependencies
 ```
 
-## Available Templates
+## Supported Languages & Templates
 
-### ✅ Fully Implemented Templates
-- **basic**: Simple project structure with generic templates
-- **fastapi**: FastAPI web service with database, authentication, and OpenAPI docs
-- **dotnet**: .NET 8 Web API with Entity Framework, JWT authentication, and Swagger
-- **vuejs**: Vue.js frontend application with routing and state management
-- **from-existing**: Analyze existing codebase and create plan
+### 🐍 **Python**
 
-### 📋 Template Implementation Status
-- **✅ 9 templates fully implemented** (generate actual code)
-- **⚠️ 11 templates referenced** (fall back to basic template)
-- **🔧 Custom templates** supported with `custom_` prefix
+#### **FastAPI Templates** ✅ Fully Implemented
+- **`fastapi_main`** - FastAPI application entry point with basic endpoints
+- **`fastapi_model`** - Pydantic model definitions with configuration
+- **`requirements`** - Python dependencies file with FastAPI ecosystem
 
-For detailed template information, see [SCHEMA.md](SCHEMA.md#template-names).
+#### **Basic Templates** ✅ Fully Implemented
+- **`basic`** - Generic template fallback for any file type
+- **`stub`** - Stub/placeholder template for creating directory structure
+
+### ⚡ **TypeScript/JavaScript**
+
+#### **Vue.js Templates** ⚠️ Referenced (Fallback to basic)
+- **`vue_main`** - Vue.js main application entry point
+- **`vue_app`** - Vue.js app component
+- **`vue_router`** - Vue Router configuration
+- **`pinia_store`** - Pinia state management store
+- **`vue_component`** - Vue component template
+- **`vue_package_json`** - Package.json with Vue dependencies
+
+#### **Node.js Templates** ⚠️ Referenced (Fallback to basic)
+- **`node_main`** - Node.js application entry point
+- **`express_app`** - Express.js application setup
+- **`nextjs_app`** - Next.js application configuration
+
+### ☕ **Java**
+
+#### **Spring Templates** ⚠️ Referenced (Fallback to basic)
+- **`spring_main`** - Spring Boot main application class
+- **`spring_controller`** - Spring REST controller
+- **`spring_service`** - Spring service layer
+- **`spring_repository`** - Spring Data repository
+
+#### **Build System Templates** ⚠️ Referenced (Fallback to basic)
+- **`maven_pom`** - Maven POM configuration
+- **`gradle_build`** - Gradle build configuration
+
+### 🔷 **C# (.NET)**
+
+#### **.NET Templates** ✅ Fully Implemented
+- **`dotnet_program`** - .NET 8 Web API Program.cs with Swagger
+- **`dotnet_controller`** - ASP.NET Core API controller
+- **`ef_dbcontext`** - Entity Framework DbContext
+- **`dotnet_service`** - .NET service layer with authentication
+- **`dotnet_csproj`** - .NET project file configuration
+
+## Template Implementation Status
+
+### ✅ **Fully Implemented (10 templates)**
+- **Python**: `fastapi_main`, `fastapi_model`, `requirements`
+- **Generic**: `basic`, `stub`
+- **.NET**: `dotnet_program`, `dotnet_controller`, `ef_dbcontext`, `dotnet_service`, `dotnet_csproj`
+
+### ⚠️ **Referenced Templates (11 templates)**
+- **Python**: `python_main`, `sqlalchemy_models`, `jwt_auth`
+- **TypeScript**: `vue_main`, `vue_app`, `vue_router`, `pinia_store`, `vue_component`, `vue_package_json`
+- **Java**: `spring_main`, `spring_controller`, `spring_service`, `maven_pom`, `gradle_build`
+- **Generic**: `basic_readme`
+
+**Note**: Referenced templates fall back to the `basic` template and generate placeholder content.
+
+### 🔧 **Custom Templates**
+- Unlimited custom templates with `custom_` prefix
+- Must be implemented in the execution engine
 
 ## Available Tools
 
@@ -193,13 +235,14 @@ This MCP server integrates seamlessly with Cursor, providing:
 ### ✅ Completed Features
 - [x] 4-phase development workflow (`plan_init`, `plan_prepare`, `plan_validate`, `plan_apply`) ✅
 - [x] Validation framework ✅
-- [x] Template system with 9 fully implemented templates ✅
+- [x] Template system with 10 fully implemented templates ✅
 - [x] .NET template support ✅
+- [x] Python FastAPI template support ✅
 - [x] Context-aware project directory handling ✅
 - [x] Template implementation status tracking ✅
 
 ### 🚧 In Progress
-- [ ] Advanced template implementations (Vue.js, additional Python templates)
+- [ ] Advanced template implementations (Vue.js, Spring Boot, additional Python templates)
 - [ ] Enhanced validation rules
 - [ ] Better error handling and user feedback
 

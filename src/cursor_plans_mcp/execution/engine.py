@@ -2,7 +2,7 @@
 Main execution engine for development plans.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -35,7 +35,7 @@ class ExecutionResult:
     error_message: Optional[str] = None
     snapshot_id: Optional[str] = None
     execution_time: Optional[float] = None
-    changes_made: List[str] = None
+    changes_made: List[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.changes_made is None:
@@ -59,9 +59,7 @@ class PlanExecutor:
         self.snapshot_manager = SnapshotManager(self.project_dir)
         self.dependency_resolver = DependencyResolver()
 
-    async def execute_plan(
-        self, plan_file: str, dry_run: bool = False
-    ) -> ExecutionResult:
+    async def execute_plan(self, plan_file: str, dry_run: bool = False) -> ExecutionResult:
         """
         Execute a development plan.
 
@@ -74,6 +72,7 @@ class PlanExecutor:
         """
         start_time = datetime.now()
 
+        snapshot_id = None
         try:
             # Load and validate plan
             plan_data = await self._load_plan(plan_file)
@@ -96,7 +95,7 @@ class PlanExecutor:
 
         except Exception as e:
             # If execution fails, attempt rollback
-            if "snapshot_id" in locals():
+            if snapshot_id is not None:
                 await self._rollback_on_failure(snapshot_id, str(e))
 
             return ExecutionResult(
@@ -124,9 +123,7 @@ class PlanExecutor:
 
             return ExecutionResult(
                 success=success,
-                status=(
-                    ExecutionStatus.ROLLED_BACK if success else ExecutionStatus.FAILED
-                ),
+                status=(ExecutionStatus.ROLLED_BACK if success else ExecutionStatus.FAILED),
                 executed_phases=[],
                 error_message=None if success else "Failed to restore snapshot",
                 execution_time=(datetime.now() - start_time).total_seconds(),
@@ -154,6 +151,10 @@ class PlanExecutor:
         with open(plan_path, "r") as f:
             plan_data = yaml.safe_load(f)
 
+        # Ensure plan_data is a dict
+        if not isinstance(plan_data, dict):
+            raise ValueError("Plan file must contain valid YAML with a dictionary structure")
+
         # Basic validation
         required_sections = ["project", "target_state", "resources", "phases"]
         for section in required_sections:
@@ -162,9 +163,7 @@ class PlanExecutor:
 
         return plan_data
 
-    async def _dry_run_execution(
-        self, execution_plan: ExecutionPlan, start_time: datetime
-    ) -> ExecutionResult:
+    async def _dry_run_execution(self, execution_plan: ExecutionPlan, start_time: datetime) -> ExecutionResult:
         """Perform a dry run showing what would be executed."""
         changes = []
 
@@ -194,6 +193,7 @@ class PlanExecutor:
         """Execute the development plan."""
         executed_phases = []
         changes_made = []
+        phase_name = None
 
         try:
             for phase in execution_plan.phases:
@@ -201,9 +201,7 @@ class PlanExecutor:
                 print(f"Executing phase: {phase_name}")
 
                 # Execute phase
-                phase_changes = await self._execute_phase(
-                    phase, execution_plan.plan_data
-                )
+                phase_changes = await self._execute_phase(phase, execution_plan.plan_data)
                 changes_made.extend(phase_changes)
                 executed_phases.append(phase_name)
 
@@ -249,9 +247,7 @@ class PlanExecutor:
 
         # Handle file resources for this phase
         if "resources" in plan_data and "files" in plan_data["resources"]:
-            file_changes = await self._create_files(
-                plan_data["resources"]["files"], phase_name
-            )
+            file_changes = await self._create_files(plan_data["resources"]["files"], phase_name)
             changes.extend(file_changes)
 
         return changes
@@ -280,9 +276,7 @@ class PlanExecutor:
 
         return changes
 
-    async def _create_files(
-        self, files: List[Dict[str, Any]], phase_name: str
-    ) -> List[str]:
+    async def _create_files(self, files: List[Dict[str, Any]], phase_name: str) -> List[str]:
         """Create files based on plan resources."""
         changes = []
 
@@ -318,9 +312,7 @@ class PlanExecutor:
             try:
                 full_path.parent.mkdir(parents=True, exist_ok=True)
             except PermissionError as e:
-                raise PermissionError(
-                    f"Cannot create directory {full_path.parent}: {e}"
-                )
+                raise PermissionError(f"Cannot create directory {full_path.parent}: {e}")
             except OSError as e:
                 raise OSError(f"Failed to create directory {full_path.parent}: {e}")
 
@@ -345,9 +337,7 @@ class PlanExecutor:
             # Catch any other unexpected errors
             raise Exception(f"Unexpected error creating file {file_path}: {e}")
 
-    def _generate_file_content(
-        self, file_path: str, file_type: str, template: str
-    ) -> str:
+    def _generate_file_content(self, file_path: str, file_type: str, template: str) -> str:
         """Generate file content based on template and type."""
         file_name = Path(file_path).name
 
@@ -506,9 +496,7 @@ public class AuthService : IAuthService
         # Create requirements.txt if it doesn't exist
         requirements_file = self.project_dir / "requirements.txt"
         if not requirements_file.exists():
-            content = self._generate_file_content(
-                "requirements.txt", "dependencies", "requirements"
-            )
+            content = self._generate_file_content("requirements.txt", "dependencies", "requirements")
             with open(requirements_file, "w") as f:
                 f.write(content)
             changes.append("Created: requirements.txt")
@@ -525,9 +513,7 @@ public class AuthService : IAuthService
 
         models_file = models_dir / "models.py"
         if not models_file.exists():
-            content = self._generate_file_content(
-                "src/models/models.py", "models", "fastapi_model"
-            )
+            content = self._generate_file_content("src/models/models.py", "models", "fastapi_model")
             with open(models_file, "w") as f:
                 f.write(content)
             changes.append("Created: src/models/models.py")

@@ -111,9 +111,7 @@ validation:
     - "syntax_check"
 """
             is_valid, error, _ = validate_plan_content(plan_content)
-            assert (
-                is_valid
-            ), f"Referenced template '{template}' should be valid: {error}"
+            assert is_valid, f"Referenced template '{template}' should be valid: {error}"
 
     def test_custom_templates_are_valid(self):
         """Test that custom templates with custom_ prefix pass validation."""
@@ -198,9 +196,7 @@ validation:
 """
             is_valid, error, _ = validate_plan_content(plan_content)
             assert not is_valid, f"Unknown template '{template}' should be invalid"
-            assert (
-                "Unknown template" in error
-            ), f"Error should mention unknown template: {error}"
+            assert "Unknown template" in error, f"Error should mention unknown template: {error}"
 
     def test_template_count_matches_documentation(self):
         """Test that the number of templates matches documentation."""
@@ -234,12 +230,6 @@ validation:
         total_templates = len(implemented_templates) + len(referenced_templates)
 
         # Verify counts match documentation
-        assert (
-            len(implemented_templates) == 9
-        ), f"Should have 9 implemented templates, got {len(implemented_templates)}"
-        assert (
-            len(referenced_templates) == 11
-        ), f"Should have 11 referenced templates, got {len(referenced_templates)}"
-        assert (
-            total_templates == 20
-        ), f"Should have 20 total templates, got {total_templates}"
+        assert len(implemented_templates) == 9, f"Should have 9 implemented templates, got {len(implemented_templates)}"
+        assert len(referenced_templates) == 11, f"Should have 11 referenced templates, got {len(referenced_templates)}"
+        assert total_templates == 20, f"Should have 20 total templates, got {total_templates}"

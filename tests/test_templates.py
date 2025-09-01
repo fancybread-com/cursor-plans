@@ -33,9 +33,7 @@ project:
             f.write(context_content)
 
         # First initialize the project
-        await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         # Then prepare the plan
         await prepare_dev_plan({"name": "basic-project", "template": "basic"})
@@ -72,9 +70,7 @@ project:
         with open(context_file, "w") as f:
             f.write(context_content)
 
-        await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         # Then prepare the plan
         await prepare_dev_plan({"name": "fastapi-project", "template": "fastapi"})
@@ -123,9 +119,7 @@ project:
         with open(context_file, "w") as f:
             f.write(context_content)
 
-        await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         # Then prepare the plan
         await prepare_dev_plan({"name": "dotnet-project", "template": "dotnet"})
@@ -164,9 +158,7 @@ project:
         with open(context_file, "w") as f:
             f.write(context_content)
 
-        await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         # Then prepare the plan
         await prepare_dev_plan({"name": "vue-project", "template": "vuejs"})
@@ -198,9 +190,7 @@ class TestExistingCodebaseDetection:
         """Test detection of FastAPI project."""
         # Create FastAPI project files
         requirements_file = temp_dir / "requirements.txt"
-        requirements_file.write_text(
-            "fastapi>=0.68.0\nuvicorn>=0.15.0\npydantic>=1.8.0"
-        )
+        requirements_file.write_text("fastapi>=0.68.0\nuvicorn>=0.15.0\npydantic>=1.8.0")
 
         main_file = temp_dir / "main.py"
         main_file.write_text("from fastapi import FastAPI\n\napp = FastAPI()")
@@ -296,9 +286,7 @@ project:
         with open(context_file, "w") as f:
             f.write(context_content)
 
-        await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         # Then prepare the plan
         await prepare_dev_plan({"name": "detected-project", "template": "fastapi"})
@@ -322,9 +310,7 @@ class TestContextHandling:
         """Test creating plan with default context file."""
         os.chdir(temp_dir)
 
-        result = await init_dev_planning(
-            {"context": str(sample_context_file), "project_directory": str(temp_dir)}
-        )
+        result = await init_dev_planning({"context": str(sample_context_file), "project_directory": str(temp_dir)})
 
         # Should mention initialization success
         result_text = result[0].text
@@ -345,9 +331,7 @@ class TestContextHandling:
 
         os.chdir(temp_dir)
 
-        result = await init_dev_planning(
-            {"context": str(story_context), "project_directory": str(temp_dir)}
-        )
+        result = await init_dev_planning({"context": str(story_context), "project_directory": str(temp_dir)})
 
         # Should use the story-specific context
         result_text = result[0].text
@@ -443,9 +427,7 @@ project:
             with open(context_file, "w") as f:
                 f.write(context_content)
 
-            await init_dev_planning(
-                {"context": str(context_file), "project_directory": str(temp_dir)}
-            )
+            await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
             # Then prepare the plan
             await prepare_dev_plan({"name": f"{template}-test", "template": template})

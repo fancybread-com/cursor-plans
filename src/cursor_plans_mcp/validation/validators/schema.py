@@ -66,9 +66,7 @@ class SchemaValidator(BaseValidator):
     def name(self) -> str:
         return "Schema validation"
 
-    async def validate(
-        self, plan_data: Dict[str, Any], plan_file_path: str
-    ) -> ValidationResult:
+    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
         result = ValidationResult()
 
         try:
@@ -96,7 +94,7 @@ class SchemaValidator(BaseValidator):
 
         return result
 
-    def _get_suggestion_for_error(self, error: Dict[str, Any]) -> str:
+    def _get_suggestion_for_error(self, error: Any) -> str:
         """Generate helpful suggestions based on Pydantic error type."""
         error_type = error.get("type", "")
         field = error.get("loc", [])[-1] if error.get("loc") else ""
@@ -111,9 +109,7 @@ class SchemaValidator(BaseValidator):
 
         return suggestions.get(error_type, "Check the field type and format")
 
-    def _validate_phase_priorities(
-        self, phases: Dict[str, Any], plan_file_path: str, result: ValidationResult
-    ):
+    def _validate_phase_priorities(self, phases: Dict[str, Any], plan_file_path: str, result: ValidationResult):
         """Validate phase priorities are logical."""
         priorities = []
 
@@ -126,9 +122,7 @@ class SchemaValidator(BaseValidator):
         # Check for duplicate priorities
         priority_values = [p[1] for p in priorities]
         if len(priority_values) != len(set(priority_values)):
-            duplicates = [
-                p for p in set(priority_values) if priority_values.count(p) > 1
-            ]
+            duplicates = [p for p in set(priority_values) if priority_values.count(p) > 1]
             result.add_error(
                 f"Duplicate phase priorities found: {duplicates}",
                 f"phases section in {plan_file_path}",

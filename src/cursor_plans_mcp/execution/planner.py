@@ -58,7 +58,7 @@ class DependencyResolver:
 
     def _parse_phases(self, plan_data: Dict[str, Any]) -> List[Phase]:
         """Parse phases from plan data."""
-        phases = []
+        phases: List[Phase] = []
 
         if "phases" not in plan_data:
             return phases
@@ -98,9 +98,7 @@ class DependencyResolver:
         for phase in phases:
             for dep in phase.dependencies:
                 if dep not in phase_names:
-                    raise ValueError(
-                        f"Phase '{phase.name}' depends on unknown phase '{dep}'"
-                    )
+                    raise ValueError(f"Phase '{phase.name}' depends on unknown phase '{dep}'")
 
         # Check for cycles
         if self._has_cycles(phases):
@@ -162,7 +160,7 @@ class DependencyResolver:
         from queue import PriorityQueue
 
         # Queue of (priority, phase_name) tuples
-        queue = PriorityQueue()
+        queue: PriorityQueue = PriorityQueue()
 
         # Add phases with no dependencies
         for phase in phases:
@@ -186,9 +184,7 @@ class DependencyResolver:
 
         # Check if all phases were processed
         if len(ordered_phases) != len(phases):
-            raise ValueError(
-                "Circular dependency detected (should have been caught earlier)"
-            )
+            raise ValueError("Circular dependency detected (should have been caught earlier)")
 
         return ordered_phases
 

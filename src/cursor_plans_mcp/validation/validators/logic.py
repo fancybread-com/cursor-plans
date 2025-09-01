@@ -15,31 +15,23 @@ class LogicValidator(BaseValidator):
     def name(self) -> str:
         return "Logic validation"
 
-    async def validate(
-        self, plan_data: Dict[str, Any], plan_file_path: str
-    ) -> ValidationResult:
+    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
         result = ValidationResult()
 
         # Validate phase dependencies
         if "phases" in plan_data:
-            self._validate_phase_dependencies(
-                plan_data["phases"], plan_file_path, result
-            )
+            self._validate_phase_dependencies(plan_data["phases"], plan_file_path, result)
 
         # Validate resource conflicts
         if "resources" in plan_data:
-            self._validate_resource_conflicts(
-                plan_data["resources"], plan_file_path, result
-            )
+            self._validate_resource_conflicts(plan_data["resources"], plan_file_path, result)
 
         # Validate template compatibility
         self._validate_template_compatibility(plan_data, plan_file_path, result)
 
         return result
 
-    def _validate_phase_dependencies(
-        self, phases: Dict[str, Any], plan_file_path: str, result: ValidationResult
-    ):
+    def _validate_phase_dependencies(self, phases: Any, plan_file_path: str, result: ValidationResult):
         """Check for circular dependencies and invalid phase references."""
         if not isinstance(phases, dict):
             return
@@ -74,17 +66,16 @@ class LogicValidator(BaseValidator):
             rec_stack.add(node)
 
             for neighbor in dependencies.get(node, []):
-                if neighbor in phase_names:  # Only check valid phases
-                    if neighbor not in visited:
-                        if has_cycle(neighbor, visited, rec_stack):
-                            return True
-                    elif neighbor in rec_stack:
+                if neighbor not in visited:
+                    if has_cycle(neighbor, visited, rec_stack):
                         return True
+                elif neighbor in rec_stack:
+                    return True
 
             rec_stack.remove(node)
             return False
 
-        visited = set()
+        visited: set[str] = set()
         for phase_name in phase_names:
             if phase_name not in visited:
                 if has_cycle(phase_name, visited, set()):
@@ -95,9 +86,7 @@ class LogicValidator(BaseValidator):
                     )
                     break  # Only report first cycle found
 
-    def _validate_resource_conflicts(
-        self, resources: Dict[str, Any], plan_file_path: str, result: ValidationResult
-    ):
+    def _validate_resource_conflicts(self, resources: Dict[str, Any], plan_file_path: str, result: ValidationResult):
         """Check for conflicting file paths and resource definitions."""
         if not isinstance(resources, dict) or "files" not in resources:
             return
@@ -107,7 +96,7 @@ class LogicValidator(BaseValidator):
             return
 
         # Track file paths to detect conflicts
-        file_paths = {}
+        file_paths: Dict[str, int] = {}
 
         for i, file_resource in enumerate(files):
             if not isinstance(file_resource, dict) or "path" not in file_resource:
@@ -126,9 +115,7 @@ class LogicValidator(BaseValidator):
             # Check for path conflicts (parent/child relationships)
             for existing_path in file_paths.keys():
                 if path != existing_path:
-                    if path.startswith(existing_path + "/") or existing_path.startswith(
-                        path + "/"
-                    ):
+                    if path.startswith(existing_path + "/") or existing_path.startswith(path + "/"):
                         result.add_warning(
                             f"Potential path conflict: '{path}' and '{existing_path}'",
                             f"resources.files in {plan_file_path}",
@@ -154,9 +141,7 @@ class LogicValidator(BaseValidator):
             if "files" in plan_data["resources"]:
                 files = plan_data["resources"]["files"]
                 if isinstance(files, list):
-                    self._check_template_references(
-                        files, target_arch, plan_file_path, result
-                    )
+                    self._check_template_references(files, target_arch, plan_file_path, result)
 
     def _check_template_references(
         self,
@@ -183,9 +168,7 @@ class LogicValidator(BaseValidator):
             template = file_resource["template"]
 
             # Check if template exists (basic check)
-            if template not in template_requirements and not template.startswith(
-                "custom_"
-            ):
+            if template not in template_requirements and not template.startswith("custom_"):
                 result.add_warning(
                     f"Unknown template '{template}' referenced",
                     f"resources.files[{i}].template in {plan_file_path}",
@@ -199,10 +182,7 @@ class LogicValidator(BaseValidator):
 
                 for req_key, req_value in requirements.items():
                     target_value = target_arch.get(req_key, "").lower()
-                    if (
-                        req_value.lower() not in target_value
-                        and target_value not in req_value.lower()
-                    ):
+                    if req_value.lower() not in target_value and target_value not in req_value.lower():
                         result.add_warning(
                             (
                                 f"Template '{template}' may not be compatible with target {req_key}: "

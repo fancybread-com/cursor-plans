@@ -27,9 +27,7 @@ class TestDotNetTemplates:
             ]
 
             for template, file_path, file_type in dotnet_templates:
-                content = executor._generate_file_content(
-                    file_path, file_type, template
-                )
+                content = executor._generate_file_content(file_path, file_type, template)
 
                 # Verify content is generated
                 assert content is not None
@@ -55,9 +53,7 @@ class TestDotNetTemplates:
                     assert "Microsoft.NET.Sdk.Web" in content
                     assert "TargetFramework" in content
 
-                print(
-                    f"✅ Template '{template}' generates .NET content ({len(content)} chars)"
-                )
+                print(f"✅ Template '{template}' generates .NET content ({len(content)} chars)")
 
     @pytest.mark.asyncio
     async def test_dotnet_template_creation(self):
@@ -105,9 +101,7 @@ project:
             executor = PlanExecutor(temp_dir)
 
             # Test Program.cs template
-            program_content = executor._generate_file_content(
-                "Program.cs", "entry_point", "dotnet_program"
-            )
+            program_content = executor._generate_file_content("Program.cs", "entry_point", "dotnet_program")
 
             # Should contain essential .NET 8 Web API setup
             assert "WebApplication.CreateBuilder" in program_content
@@ -117,9 +111,7 @@ project:
             assert "app.Run" in program_content
 
             # Test csproj template
-            csproj_content = executor._generate_file_content(
-                "Project.csproj", "project_file", "dotnet_csproj"
-            )
+            csproj_content = executor._generate_file_content("Project.csproj", "project_file", "dotnet_csproj")
 
             # Should contain proper .NET 8 project configuration
             assert "Microsoft.NET.Sdk.Web" in csproj_content

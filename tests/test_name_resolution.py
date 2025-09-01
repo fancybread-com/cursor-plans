@@ -45,9 +45,7 @@ project:
                 with open(context_file, "w") as f:
                     f.write(context_content)
 
-                result = await init_dev_planning(
-                    {"context": str(context_file), "project_directory": temp_dir}
-                )
+                result = await init_dev_planning({"context": str(context_file), "project_directory": temp_dir})
 
             # Check that initialization was successful
             assert "Development Planning Initialized" in result[0].text
@@ -62,9 +60,7 @@ project:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a package.json that would normally override the name
             package_file = Path(temp_dir) / "package.json"
-            package_file.write_text(
-                '{"name": "existing-project", "dependencies": {"vue": "^3.0.0"}}'
-            )
+            package_file.write_text('{"name": "existing-project", "dependencies": {"vue": "^3.0.0"}}')
 
             with patch("cursor_plans_mcp.server._project_context", {}):
                 # Create a context file for FastAPI
@@ -78,9 +74,7 @@ project:
                 with open(context_file, "w") as f:
                     f.write(context_content)
 
-                result = await init_dev_planning(
-                    {"context": str(context_file), "project_directory": temp_dir}
-                )
+                result = await init_dev_planning({"context": str(context_file), "project_directory": temp_dir})
 
             # Check that initialization was successful
             assert "Development Planning Initialized" in result[0].text
@@ -145,9 +139,7 @@ project:
                 with open(context_file, "w") as f:
                     f.write(context_content)
 
-                result = await init_dev_planning(
-                    {"context": str(context_file), "project_directory": temp_dir}
-                )
+                result = await init_dev_planning({"context": str(context_file), "project_directory": temp_dir})
 
                 # Check that initialization was successful
                 assert "Development Planning Initialized" in result[0].text
@@ -179,9 +171,7 @@ project:
                 with open(context_file, "w") as f:
                     f.write(context_content)
 
-                result = await init_dev_planning(
-                    {"context": str(context_file), "project_directory": temp_dir}
-                )
+                result = await init_dev_planning({"context": str(context_file), "project_directory": temp_dir})
 
                 # Check that initialization was successful
                 assert "Development Planning Initialized" in result[0].text
@@ -214,9 +204,7 @@ project:
                 with open(context_file, "w") as f:
                     f.write(context_content)
 
-                await init_dev_planning(
-                    {"context": str(context_file), "project_directory": temp_dir}
-                )
+                await init_dev_planning({"context": str(context_file), "project_directory": temp_dir})
 
                 # Then prepare the plan
                 await prepare_dev_plan({"name": "test-project", "template": "basic"})

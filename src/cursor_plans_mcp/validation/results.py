@@ -79,7 +79,7 @@ class ValidationResult:
         """Add a validation issue."""
         self.issues.append(issue)
 
-    def add_error(self, message: str, location: str, suggestion: str = None):
+    def add_error(self, message: str, location: str, suggestion: Optional[str] = None):
         """Add an error-level issue."""
         self.add_issue(
             ValidationIssue(
@@ -90,7 +90,7 @@ class ValidationResult:
             )
         )
 
-    def add_warning(self, message: str, location: str, suggestion: str = None):
+    def add_warning(self, message: str, location: str, suggestion: Optional[str] = None):
         """Add a warning-level issue."""
         self.add_issue(
             ValidationIssue(
@@ -101,7 +101,7 @@ class ValidationResult:
             )
         )
 
-    def add_suggestion(self, message: str, location: str, suggestion: str = None):
+    def add_suggestion(self, message: str, location: str, suggestion: Optional[str] = None):
         """Add a suggestion-level issue."""
         self.add_issue(
             ValidationIssue(

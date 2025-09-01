@@ -16,9 +16,7 @@ class ContextValidator(BaseValidator):
     def name(self) -> str:
         return "Context validation"
 
-    async def validate(
-        self, plan_data: Dict[str, Any], plan_file_path: str
-    ) -> ValidationResult:
+    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
         result = ValidationResult()
 
         # Get the directory containing the plan file
@@ -130,9 +128,7 @@ class ContextValidator(BaseValidator):
     ):
         """Check if the plan makes good use of available context."""
         # Check if context files exist but plan doesn't seem to reference them
-        has_context_files = os.path.exists(
-            os.path.join(plan_dir, "context.txt")
-        ) or any(
+        has_context_files = os.path.exists(os.path.join(plan_dir, "context.txt")) or any(
             f.startswith("context-") and f.endswith(".txt")
             for f in os.listdir(plan_dir)
             if os.path.isfile(os.path.join(plan_dir, f))
@@ -147,10 +143,7 @@ class ContextValidator(BaseValidator):
                     files = plan_data["resources"]["files"]
                     if isinstance(files, list):
                         for file_resource in files:
-                            if (
-                                isinstance(file_resource, dict)
-                                and "path" in file_resource
-                            ):
+                            if isinstance(file_resource, dict) and "path" in file_resource:
                                 path = file_resource["path"]
                                 # Check if path references existing project structure
                                 full_path = os.path.join(plan_dir, path)

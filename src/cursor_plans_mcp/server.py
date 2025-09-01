@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional
 
 import anyio
 import click
@@ -245,9 +245,7 @@ def main(port: int, transport: str) -> int:
         ]
 
     @app.call_tool()
-    async def call_tool(
-        name: str, arguments: dict[str, Any]
-    ) -> list[types.ContentBlock]:
+    async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.ContentBlock]:
         """Handle tool calls for development planning operations."""
 
         if name == "plan_init":
@@ -272,10 +270,8 @@ def main(port: int, transport: str) -> int:
         sse = SseServerTransport("/messages/")
 
         async def handle_sse(request: Request):
-            async with sse.connect_sse(request.scope, request.receive, request._send) as streams:  # type: ignore[reportPrivateUsage]
-                await app.run(
-                    streams[0], streams[1], app.create_initialization_options()
-                )
+            async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
+                await app.run(streams[0], streams[1], app.create_initialization_options())
             return Response()
 
         starlette_app = Starlette(
@@ -294,9 +290,7 @@ def main(port: int, transport: str) -> int:
 
         async def arun():
             async with stdio_server() as streams:
-                await app.run(
-                    streams[0], streams[1], app.create_initialization_options()
-                )
+                await app.run(streams[0], streams[1], app.create_initialization_options())
 
         anyio.run(arun)
 
@@ -323,7 +317,9 @@ async def prepare_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock
         ]
 
     # Use the stored cursorplans_dir from context, or fall back to project directory
-    cursorplans_dir = Path(_project_context.get("cursorplans_dir", _project_context.get("project_directory", ".") + "/.cursorplans"))
+    cursorplans_dir = Path(
+        _project_context.get("cursorplans_dir", _project_context.get("project_directory", ".") + "/.cursorplans")
+    )
     project_path = cursorplans_dir.parent
 
     # Ensure .cursorplans directory exists
@@ -347,14 +343,10 @@ async def prepare_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock
     # Generate success message
     if plan_creation_result["success"]:
         success_message = PLAN_CREATION_SUCCESS_TEMPLATE.format(
-            plan_file=plan_creation_result['plan_file'],
-            name=name,
-            template=template
+            plan_file=plan_creation_result["plan_file"], name=name, template=template
         )
     else:
-        success_message = PLAN_CREATION_FAILURE_TEMPLATE.format(
-            error=plan_creation_result['error']
-        )
+        success_message = PLAN_CREATION_FAILURE_TEMPLATE.format(error=plan_creation_result["error"])
 
     return [types.TextContent(type="text", text=success_message)]
 
@@ -377,8 +369,7 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
             types.TextContent(
                 type="text",
                 text=(
-                    "❌ **Error**: Context file path is required.\n\n"
-                    'Usage: dev_plan_init context="sample.context.yaml"'
+                    '❌ **Error**: Context file path is required.\n\nUsage: dev_plan_init context="sample.context.yaml"'
                 ),
             )
         ]
@@ -413,11 +404,7 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
             )
         ]
     except Exception as e:
-        return [
-            types.TextContent(
-                type="text", text=f"❌ **Error**: Could not read context file: {str(e)}"
-            )
-        ]
+        return [types.TextContent(type="text", text=f"❌ **Error**: Could not read context file: {str(e)}")]
 
     # Extract project configuration
     project_config = context_config["project"]
@@ -461,9 +448,7 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
         cursorplans_dir.mkdir(exist_ok=True)
 
         reset_output = RESET_COMPLETE_TEMPLATE.format(
-            project_path=project_path,
-            file_count=len(context_files),
-            cursorplans_dir=cursorplans_dir
+            project_path=project_path, file_count=len(context_files), cursorplans_dir=cursorplans_dir
         )
         return [types.TextContent(type="text", text=reset_output)]
 
@@ -544,7 +529,7 @@ async def init_dev_planning(arguments: dict[str, Any]) -> list[types.ContentBloc
         context_file=context_file,
         objectives_text=objectives_text,
         architecture_text=architecture_text,
-        context_text=context_text
+        context_text=context_text,
     )
 
     return [types.TextContent(type="text", text=init_output)]
@@ -570,8 +555,9 @@ async def _create_plan_file(
             try:
                 with open(_project_context["context_config_path"], "r") as f:
                     import yaml
+
                     context_config = yaml.safe_load(f)
-            except Exception as e:
+            except Exception:
                 pass  # Fall back to basic plan generation
 
         # Generate plan content using context-aware logic
@@ -580,17 +566,13 @@ async def _create_plan_file(
             if not context_config:
                 # Fall back to basic template
                 return BASE_PLAN_TEMPLATE.format(
-                    name=name,
-                    project_type=project_type,
-                    project_description=project_description
+                    name=name, project_type=project_type, project_description=project_description
                 )
 
             # Extract context sections
             components = context_config.get("components", {})
             languages = context_config.get("languages", {})
             rules = context_config.get("rules", {})
-            testing = context_config.get("testing", {})
-            documentation = context_config.get("documentation", {})
 
             # Build features list from components and languages
             features = []
@@ -613,11 +595,7 @@ async def _create_plan_file(
 
             # Ensure we have at least one file resource
             if not resources_files:
-                resources_files.append({
-                    "path": "README.md",
-                    "type": "documentation",
-                    "template": "basic_readme"
-                })
+                resources_files.append({"path": "README.md", "type": "documentation", "template": "basic_readme"})
 
             # Add component-based files
             if components:
@@ -625,54 +603,55 @@ async def _create_plan_file(
                     if isinstance(component_list, list):
                         for component in component_list:
                             if isinstance(component, dict) and "path" in component:
-                                resources_files.append({
-                                    "path": f"{component['path']}/__init__.py",
-                                    "type": "component_init",
-                                    "template": "stub"  # Use stub template for placeholder files
-                                })
+                                resources_files.append(
+                                    {
+                                        "path": f"{component['path']}/__init__.py",
+                                        "type": "component_init",
+                                        "template": "stub",  # Use stub template for placeholder files
+                                    }
+                                )
 
             # Add language-specific files
             if languages:
                 for lang_name, lang_config in languages.items():
                     if isinstance(lang_config, dict) and "templates" in lang_config:
                         for template_name in lang_config["templates"]:
-                            resources_files.append({
-                                "path": f"src/cursor_plans_mcp/templates/languages/{lang_name}/{template_name}",
-                                "type": "language_template",
-                                "template": "stub"  # Use stub template for placeholder files
-                            })
+                            resources_files.append(
+                                {
+                                    "path": f"src/cursor_plans_mcp/templates/languages/{lang_name}/{template_name}",
+                                    "type": "language_template",
+                                    "template": "stub",  # Use stub template for placeholder files
+                                }
+                            )
 
             # Build phases based on components and context
             phases = {
-                "foundation": {
-                    "priority": 1,
-                    "tasks": ["setup_project_structure", "create_component_directories"]
-                },
+                "foundation": {"priority": 1, "tasks": ["setup_project_structure", "create_component_directories"]},
                 "language_detection": {
                     "priority": 2,
                     "dependencies": ["foundation"],
-                    "tasks": ["implement_language_detection", "add_file_pattern_support"]
+                    "tasks": ["implement_language_detection", "add_file_pattern_support"],
                 },
                 "language_templates": {
                     "priority": 3,
                     "dependencies": ["foundation"],
-                    "tasks": ["create_language_templates", "implement_template_engine"]
+                    "tasks": ["create_language_templates", "implement_template_engine"],
                 },
                 "language_validation": {
                     "priority": 4,
                     "dependencies": ["foundation"],
-                    "tasks": ["implement_language_validators", "add_validation_rules"]
+                    "tasks": ["implement_language_validators", "add_validation_rules"],
                 },
                 "mcp_integration": {
                     "priority": 5,
                     "dependencies": ["language_detection", "language_templates", "language_validation"],
-                    "tasks": ["create_mcp_tools", "implement_language_apis"]
+                    "tasks": ["create_mcp_tools", "implement_language_apis"],
                 },
                 "testing": {
                     "priority": 6,
                     "dependencies": ["mcp_integration"],
-                    "tasks": ["unit_tests", "integration_tests", "language_specific_tests"]
-                }
+                    "tasks": ["unit_tests", "integration_tests", "language_specific_tests"],
+                },
             }
 
             # Build validation rules
@@ -709,14 +688,17 @@ target_state:
 resources:
   files:
 """,
-                chr(10).join(f'    - path: "{file["path"]}"\n      type: "{file["type"]}"\n      template: "{file["template"]}"' for file in resources_files),
+                chr(10).join(
+                    f'    - path: "{file["path"]}"\n      type: "{file["type"]}"\n      template: "{file["template"]}"'
+                    for file in resources_files
+                ),
                 """
   dependencies:
 """,
                 chr(10).join(f'    - "{dep}"' for dep in resources_dependencies),
                 """
 phases:
-"""
+""",
             ]
 
             # Add phases
@@ -749,9 +731,7 @@ validation:
         elif template == "basic":
             # Use basic template
             plan_content = BASE_PLAN_TEMPLATE.format(
-                name=name,
-                project_type=project_type,
-                project_description=project_description
+                name=name, project_type=project_type, project_description=project_description
             )
         else:
             # Use context-aware plan generation
@@ -1090,11 +1070,11 @@ async def load_context_file(context_file_path: str) -> list[str]:
 
 
 async def detect_existing_codebase(
-    directory: str, context_files: list[str] = None, suggest_name: bool = True
+    directory: str, context_files: Optional[list[str]] = None, suggest_name: bool = True
 ) -> dict[str, Any]:
     """Detect the framework and structure of an existing codebase."""
     current_dir = Path(directory)
-    detected_info = {
+    detected_info: Dict[str, Any] = {
         "framework": None,
         "language": None,
         "suggested_name": None,
@@ -1179,9 +1159,7 @@ async def detect_existing_codebase(
                             detected_info["language"] = "JavaScript/TypeScript"
                             detected_info["structure"] = "vue_project"
                             if suggest_name:
-                                detected_info["suggested_name"] = package_data.get(
-                                    "name", "vue-app"
-                                )
+                                detected_info["suggested_name"] = package_data.get("name", "vue-app")
                             else:
                                 detected_info["suggested_name"] = None
                         elif "react" in deps:
@@ -1189,18 +1167,14 @@ async def detect_existing_codebase(
                             detected_info["language"] = "JavaScript/TypeScript"
                             detected_info["structure"] = "react_project"
                             if suggest_name:
-                                detected_info["suggested_name"] = package_data.get(
-                                    "name", "react-app"
-                                )
+                                detected_info["suggested_name"] = package_data.get("name", "react-app")
                             else:
                                 detected_info["suggested_name"] = None
             except (json.JSONDecodeError, FileNotFoundError):
                 pass
 
         # Python/FastAPI detection
-        elif any(
-            f in file_names for f in ["requirements.txt", "pyproject.toml", "setup.py"]
-        ):
+        elif any(f in file_names for f in ["requirements.txt", "pyproject.toml", "setup.py"]):
             detected_info["framework"] = "fastapi"
             detected_info["language"] = "Python"
             detected_info["structure"] = "python_project"
@@ -1208,7 +1182,8 @@ async def detect_existing_codebase(
             # Check if it's specifically FastAPI
             try:
                 if "requirements.txt" in file_names:
-                    with open(current_dir / "requirements.txt", "r") as f:
+                    reqs_path = current_dir / "requirements.txt"
+                    with open(reqs_path, "r") as f:
                         reqs = f.read().lower()
                         if "fastapi" in reqs:
                             detected_info["framework"] = "fastapi"
@@ -1241,9 +1216,8 @@ async def detect_existing_codebase(
 
         for pattern in key_patterns:
             matches = list(current_dir.glob(pattern))
-            detected_info["key_files"].extend(
-                [str(f.relative_to(current_dir)) for f in matches]
-            )
+            if isinstance(detected_info["key_files"], list):
+                detected_info["key_files"].extend([str(f.relative_to(current_dir)) for f in matches])
 
     except Exception as e:
         print(f"Error detecting codebase: {e}")
@@ -1297,10 +1271,10 @@ async def apply_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
     dry_run = arguments.get("dry_run", False)
 
     try:
-                # Resolve plan file path
+        # Resolve plan file path
         plan_path = Path(plan_file)
 
-                # If it's a relative path and doesn't exist, try looking in .cursorplans directory
+        # If it's a relative path and doesn't exist, try looking in .cursorplans directory
         if not plan_path.is_absolute() and not plan_path.exists():
             # Try .cursorplans directory in current working directory (project-specific)
             cursorplans_path = Path.cwd() / ".cursorplans" / plan_path.name
@@ -1396,9 +1370,7 @@ async def apply_dev_plan(arguments: dict[str, Any]) -> list[types.ContentBlock]:
                 output += f"📋 **Failed at phase:** {result.failed_phase}\n"
 
             if result.executed_phases:
-                output += (
-                    f"✅ **Completed phases:** {', '.join(result.executed_phases)}\n"
-                )
+                output += f"✅ **Completed phases:** {', '.join(result.executed_phases)}\n"
 
             if result.snapshot_id:
                 output += f"🔄 **Rollback attempted to:** {result.snapshot_id}\n"

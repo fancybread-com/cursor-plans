@@ -18,9 +18,7 @@ class BaseValidator(ABC):
         pass
 
     @abstractmethod
-    async def validate(
-        self, plan_data: Dict[str, Any], plan_file_path: str
-    ) -> ValidationResult:
+    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
         """
         Validate the development plan.
 

@@ -34,9 +34,7 @@ project:
         with open(context_file, "w") as f:
             f.write(context_content)
 
-        result = await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        result = await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         assert len(result) == 1
         assert "Development Planning Initialized" in result[0].text
@@ -64,9 +62,7 @@ project:
         with open(context_file, "w") as f:
             f.write(context_content)
 
-        result = await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        result = await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         assert len(result) == 1
         assert "Development Planning Initialized" in result[0].text
@@ -83,9 +79,7 @@ project:
         """Test initializing with context file."""
         os.chdir(temp_dir)
 
-        result = await init_dev_planning(
-            {"context": str(sample_context_file), "project_directory": str(temp_dir)}
-        )
+        result = await init_dev_planning({"context": str(sample_context_file), "project_directory": str(temp_dir)})
 
         assert len(result) == 1
         assert "Development Planning Initialized" in result[0].text
@@ -111,9 +105,7 @@ project:
             f.write(context_content)
 
         # Initialize first
-        await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         # Now prepare the plan
         result = await prepare_dev_plan({"name": "test-project", "template": "basic"})
@@ -151,9 +143,7 @@ project:
             f.write(context_content)
 
         # Initialize first
-        await init_dev_planning(
-            {"context": str(context_file), "project_directory": str(temp_dir)}
-        )
+        await init_dev_planning({"context": str(context_file), "project_directory": str(temp_dir)})
 
         # Now prepare the plan
         result = await prepare_dev_plan({"name": "api-project", "template": "fastapi"})
@@ -225,9 +215,7 @@ class TestPlanValidate:
         assert "Plan file not found" in result[0].text
 
     @pytest.mark.asyncio
-    async def test_validate_with_cursor_rules(
-        self, sample_plan_file, sample_cursorrules, temp_dir
-    ):
+    async def test_validate_with_cursor_rules(self, sample_plan_file, sample_cursorrules, temp_dir):
         """Test validation with Cursor rules."""
         os.chdir(temp_dir)
 
@@ -334,9 +322,7 @@ class TestExecutionTools:
         """Test dev_apply_plan tool with dry run."""
         os.chdir(temp_dir)
 
-        result = await apply_dev_plan(
-            {"plan_file": "nonexistent.devplan", "dry_run": True}
-        )
+        result = await apply_dev_plan({"plan_file": "nonexistent.devplan", "dry_run": True})
 
         assert len(result) == 1
         assert result[0].type == "text"
@@ -347,9 +333,7 @@ class TestExecutionTools:
         """Test dev_apply_plan tool with actual execution."""
         os.chdir(temp_dir)
 
-        result = await apply_dev_plan(
-            {"plan_file": "nonexistent.devplan", "dry_run": False}
-        )
+        result = await apply_dev_plan({"plan_file": "nonexistent.devplan", "dry_run": False})
 
         assert len(result) == 1
         assert result[0].type == "text"

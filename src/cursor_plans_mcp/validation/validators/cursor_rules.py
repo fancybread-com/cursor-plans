@@ -19,9 +19,7 @@ class CursorRulesValidator(BaseValidator):
     def name(self) -> str:
         return "Cursor Rules validation"
 
-    async def validate(
-        self, plan_data: Dict[str, Any], plan_file_path: str
-    ) -> ValidationResult:
+    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
         result = ValidationResult()
 
         # Get the directory containing the plan file
@@ -39,21 +37,11 @@ class CursorRulesValidator(BaseValidator):
             return result
 
         # Validate against different rule categories
-        self._validate_architectural_patterns(
-            plan_data, cursor_rules, plan_file_path, result
-        )
-        self._validate_naming_conventions(
-            plan_data, cursor_rules, plan_file_path, result
-        )
-        self._validate_security_requirements(
-            plan_data, cursor_rules, plan_file_path, result
-        )
-        self._validate_framework_patterns(
-            plan_data, cursor_rules, plan_file_path, result
-        )
-        self._validate_testing_requirements(
-            plan_data, cursor_rules, plan_file_path, result
-        )
+        self._validate_architectural_patterns(plan_data, cursor_rules, plan_file_path, result)
+        self._validate_naming_conventions(plan_data, cursor_rules, plan_file_path, result)
+        self._validate_security_requirements(plan_data, cursor_rules, plan_file_path, result)
+        self._validate_framework_patterns(plan_data, cursor_rules, plan_file_path, result)
+        self._validate_testing_requirements(plan_data, cursor_rules, plan_file_path, result)
 
         return result
 
@@ -141,7 +129,7 @@ class CursorRulesValidator(BaseValidator):
 
                             # Check against naming patterns
                             for pattern_name, pattern_regex in naming_patterns.items():
-                                if not re.match(pattern_regex, file_name):
+                                if isinstance(pattern_regex, str) and not re.match(pattern_regex, file_name):
                                     file_type = file_resource.get("type", "file")
                                     if pattern_name.lower() in file_type.lower():
                                         result.add_warning(
@@ -170,11 +158,7 @@ class CursorRulesValidator(BaseValidator):
                 )
 
         # Check for authorization requirements
-        if (
-            "authorization" in rules_lower
-            or "rbac" in rules_lower
-            or "role-based" in rules_lower
-        ):
+        if "authorization" in rules_lower or "rbac" in rules_lower or "role-based" in rules_lower:
             if not self._plan_has_authorization(plan_data):
                 result.add_warning(
                     "Authorization/RBAC may be required",
@@ -209,9 +193,7 @@ class CursorRulesValidator(BaseValidator):
 
         # FastAPI specific rules
         if "fastapi" in framework_lower:
-            if "pydantic models" in rules_lower and not self._plan_has_pydantic_models(
-                plan_data
-            ):
+            if "pydantic models" in rules_lower and not self._plan_has_pydantic_models(plan_data):
                 result.add_warning(
                     "Pydantic models are recommended for FastAPI but not found in plan",
                     f"resources in {plan_file_path}",
@@ -256,9 +238,7 @@ class CursorRulesValidator(BaseValidator):
 
         # Check for coverage requirements
         if "test coverage" in rules_lower or "coverage" in rules_lower:
-            if self._plan_has_testing_phase(
-                plan_data
-            ) and not self._plan_has_coverage_config(plan_data):
+            if self._plan_has_testing_phase(plan_data) and not self._plan_has_coverage_config(plan_data):
                 result.add_suggestion(
                     "Test coverage tracking is recommended",
                     f"testing phase in {plan_file_path}",
@@ -290,9 +270,7 @@ class CursorRulesValidator(BaseValidator):
                         tasks = phase_data["tasks"]
                         if isinstance(tasks, list):
                             for task in tasks:
-                                if isinstance(task, str) and (
-                                    "di" in task.lower() or "injection" in task.lower()
-                                ):
+                                if isinstance(task, str) and ("di" in task.lower() or "injection" in task.lower()):
                                     return True
         return False
 
@@ -344,17 +322,12 @@ class CursorRulesValidator(BaseValidator):
         """Check if plan includes authorization/RBAC."""
         # Similar to authentication but looking for authorization patterns
         text_content = str(plan_data).lower()
-        return any(
-            term in text_content
-            for term in ["authorization", "rbac", "role", "permission"]
-        )
+        return any(term in text_content for term in ["authorization", "rbac", "role", "permission"])
 
     def _plan_has_tls(self, plan_data: Dict[str, Any]) -> bool:
         """Check if plan includes TLS/HTTPS configuration."""
         text_content = str(plan_data).lower()
-        return any(
-            term in text_content for term in ["https", "tls", "ssl", "certificate"]
-        )
+        return any(term in text_content for term in ["https", "tls", "ssl", "certificate"])
 
     def _plan_has_testing_phase(self, plan_data: Dict[str, Any]) -> bool:
         """Check if plan has a testing phase."""
@@ -382,10 +355,7 @@ class CursorRulesValidator(BaseValidator):
     def _plan_has_api_documentation(self, plan_data: Dict[str, Any]) -> bool:
         """Check if plan includes API documentation."""
         text_content = str(plan_data).lower()
-        return any(
-            term in text_content
-            for term in ["openapi", "swagger", "documentation", "docs"]
-        )
+        return any(term in text_content for term in ["openapi", "swagger", "documentation", "docs"])
 
     def _plan_has_typescript(self, plan_data: Dict[str, Any]) -> bool:
         """Check if plan uses TypeScript."""
@@ -411,10 +381,12 @@ class CursorRulesValidator(BaseValidator):
             if isinstance(arch, list):
                 for item in arch:
                     if isinstance(item, dict) and "framework" in item:
-                        return item["framework"]
+                        framework = item["framework"]
+                        if isinstance(framework, str):
+                            return framework
         return None
 
-    def _extract_naming_patterns(self, cursor_rules: str) -> Dict[str, str]:
+    def _extract_naming_patterns(self, cursor_rules: str) -> Dict[str, Any]:
         """Extract naming patterns from Cursor rules text."""
         patterns = {}
 

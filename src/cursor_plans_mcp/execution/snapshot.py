@@ -128,7 +128,7 @@ class SnapshotManager:
 
     async def list_snapshots(self) -> List[Dict[str, Any]]:
         """List all available snapshots."""
-        snapshots = []
+        snapshots: List[Dict[str, Any]] = []
 
         if not self.metadata_file.exists():
             return snapshots
@@ -188,9 +188,7 @@ class SnapshotManager:
     def _generate_snapshot_id(self) -> str:
         """Generate a unique snapshot ID."""
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        random_suffix = hashlib.md5(f"{timestamp}-{os.getpid()}".encode()).hexdigest()[
-            :8
-        ]
+        random_suffix = hashlib.md5(f"{timestamp}-{os.getpid()}".encode()).hexdigest()[:8]
         return f"snapshot-{timestamp}-{random_suffix}"
 
     async def _copy_project_files(self, snapshot_dir: Path) -> tuple[int, int]:
@@ -267,9 +265,7 @@ class SnapshotManager:
 
         return file_count, total_size
 
-    async def _restore_project_files(
-        self, snapshot_dir: Path, project_files: List[str]
-    ):
+    async def _restore_project_files(self, snapshot_dir: Path, project_files: List[str]):
         """Restore project files from snapshot."""
         # First, remove existing files (except .devstate)
         for item in self.project_dir.iterdir():
@@ -384,9 +380,7 @@ class SnapshotManager:
         except Exception as e:
             print(f"Failed to remove snapshot from index: {str(e)}")
 
-    async def _update_snapshot_metadata(
-        self, snapshot_id: str, updates: Dict[str, Any]
-    ):
+    async def _update_snapshot_metadata(self, snapshot_id: str, updates: Dict[str, Any]):
         """Update snapshot metadata."""
         try:
             with open(self.metadata_file, "r") as f:

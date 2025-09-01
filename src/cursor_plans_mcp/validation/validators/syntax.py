@@ -15,9 +15,7 @@ class SyntaxValidator(BaseValidator):
     def name(self) -> str:
         return "Syntax validation"
 
-    async def validate(
-        self, plan_data: Dict[str, Any], plan_file_path: str
-    ) -> ValidationResult:
+    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
         result = ValidationResult()
 
         # Check required top-level sections
