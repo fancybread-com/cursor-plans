@@ -12,9 +12,7 @@ from cursor_plans_mcp.server import init_dev_planning
 class TestDevPlanInit:
     """Test the dev_plan_init MCP tool."""
 
-    def create_sample_context_file(
-        self, temp_dir: str, project_name: str = "test-project"
-    ) -> str:
+    def create_sample_context_file(self, temp_dir: str, project_name: str = "test-project") -> str:
         """Helper to create a sample context YAML file."""
         context_content = {
             "project": {
@@ -89,9 +87,7 @@ class TestDevPlanInit:
     @pytest.mark.asyncio
     async def test_init_dev_planning_missing_context_file(self):
         """Test error handling when context file is missing."""
-        result = await init_dev_planning(
-            {"context": "/non/existent/context.yaml", "reset": False}
-        )
+        result = await init_dev_planning({"context": "/non/existent/context.yaml", "reset": False})
 
         assert len(result) == 1
         assert "Error" in result[0].text
@@ -114,9 +110,7 @@ class TestDevPlanInit:
             context_path = Path(temp_dir) / "invalid.context.yaml"
             context_path.write_text("invalid: yaml: content: [")
 
-            result = await init_dev_planning(
-                {"context": str(context_path), "reset": False}
-            )
+            result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
             assert "Error" in result[0].text
@@ -130,9 +124,7 @@ class TestDevPlanInit:
             context_path = Path(temp_dir) / "incomplete.context.yaml"
             context_path.write_text("context_files:\n  source: ['*.py']")
 
-            result = await init_dev_planning(
-                {"context": str(context_path), "reset": False}
-            )
+            result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
             assert "Error" in result[0].text
@@ -144,9 +136,7 @@ class TestDevPlanInit:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a comprehensive project structure
             (Path(temp_dir) / "src").mkdir()
-            (Path(temp_dir) / "src" / "main.py").write_text(
-                "from fastapi import FastAPI"
-            )
+            (Path(temp_dir) / "src" / "main.py").write_text("from fastapi import FastAPI")
             (Path(temp_dir) / "src" / "models.py").write_text("class User: pass")
             (Path(temp_dir) / "README.md").write_text("# Test Project")
             (Path(temp_dir) / "pyproject.toml").write_text("[project]\nname = 'test'")
@@ -195,9 +185,7 @@ class TestDevPlanInit:
             with open(context_path, "w") as f:
                 yaml.dump(context_content, f)
 
-            result = await init_dev_planning(
-                {"context": str(context_path), "reset": False}
-            )
+            result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
             result_text = result[0].text
@@ -226,9 +214,7 @@ class TestDevPlanInit:
             with open(context_path, "w") as f:
                 yaml.dump(context_content, f)
 
-            result = await init_dev_planning(
-                {"context": str(context_path), "reset": False}
-            )
+            result = await init_dev_planning({"context": str(context_path), "reset": False})
 
             assert len(result) == 1
             assert "Error" in result[0].text

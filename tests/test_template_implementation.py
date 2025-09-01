@@ -58,24 +58,18 @@ class TestTemplateImplementation:
                 actual_templates.append("basic")
 
             # Check which templates are missing
-            missing_templates = [
-                t for t in expected_templates if t not in actual_templates
-            ]
+            missing_templates = [t for t in expected_templates if t not in actual_templates]
 
             if missing_templates:
                 pytest.fail(f"Missing template implementations: {missing_templates}")
 
             # Check for extra templates that aren't in the schema
             extra_templates = [
-                t
-                for t in actual_templates
-                if t not in expected_templates and not t.startswith("custom_")
+                t for t in actual_templates if t not in expected_templates and not t.startswith("custom_")
             ]
 
             if extra_templates:
-                print(
-                    f"Warning: Extra templates found that aren't in schema: {extra_templates}"
-                )
+                print(f"Warning: Extra templates found that aren't in schema: {extra_templates}")
 
     @pytest.mark.asyncio
     async def test_basic_template_creation(self):
@@ -94,9 +88,7 @@ project:
             with open(context_file, "w") as f:
                 f.write(context_content)
 
-            result = await init_dev_planning(
-                {"context": str(context_file), "project_directory": temp_dir}
-            )
+            result = await init_dev_planning({"context": str(context_file), "project_directory": temp_dir})
 
             assert len(result) == 1
             assert "Development Planning Initialized" in result[0].text
@@ -124,9 +116,7 @@ project:
             with open(context_file, "w") as f:
                 f.write(context_content)
 
-            result = await init_dev_planning(
-                {"context": str(context_file), "project_directory": temp_dir}
-            )
+            result = await init_dev_planning({"context": str(context_file), "project_directory": temp_dir})
 
             assert len(result) == 1
             assert "Development Planning Initialized" in result[0].text
@@ -137,9 +127,7 @@ project:
             plan_file = cursorplans_dir / "test-fastapi.devplan"
             assert not plan_file.exists()
 
-    @pytest.mark.skip(
-        reason="Template content generation feature not fully implemented"
-    )
+    @pytest.mark.skip(reason="Template content generation feature not fully implemented")
     def test_template_content_generation(self):
         """Test that template content can be generated for all expected templates."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -154,18 +142,12 @@ project:
 
             for template, file_path, file_type in test_templates:
                 try:
-                    content = executor._generate_file_content(
-                        file_path, file_type, template
-                    )
+                    content = executor._generate_file_content(file_path, file_type, template)
                     assert content is not None
                     assert len(content) > 0
-                    print(
-                        f"✅ Template '{template}' generates content ({len(content)} chars)"
-                    )
+                    print(f"✅ Template '{template}' generates content ({len(content)} chars)")
                 except Exception as e:
-                    pytest.fail(
-                        f"Template '{template}' failed to generate content: {e}"
-                    )
+                    pytest.fail(f"Template '{template}' failed to generate content: {e}")
 
     @pytest.mark.skip(reason="Template handling feature not fully implemented")
     @pytest.mark.asyncio
@@ -175,9 +157,7 @@ project:
             executor = PlanExecutor(temp_dir)
 
             # Test with a template that doesn't exist
-            content = executor._generate_file_content(
-                "test.py", "test", "nonexistent_template"
-            )
+            content = executor._generate_file_content("test.py", "test", "nonexistent_template")
 
             # Should fall back to basic template
             assert content is not None

@@ -1,4 +1,5 @@
 """Tests for C# project generators functionality."""
+
 import shutil
 import tempfile
 from pathlib import Path
@@ -41,7 +42,7 @@ class TestCSharpProjectGenerator:
         assert generator._is_command_allowed("rm") is False
         assert generator._is_command_allowed("sudo") is False
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_generate_console_project_success(self, mock_run):
         """Test successful console project generation."""
         # Mock successful subprocess result
@@ -52,9 +53,7 @@ class TestCSharpProjectGenerator:
         mock_run.return_value = mock_result
 
         generator = CSharpProjectGenerator()
-        result = generator.generate_project(
-            "console", "TestConsole", "/tmp/test_console", framework="net8.0"
-        )
+        result = generator.generate_project("console", "TestConsole", "/tmp/test_console", framework="net8.0")
 
         assert result["success"] is True
         assert result["project_type"] == "console"
@@ -65,7 +64,7 @@ class TestCSharpProjectGenerator:
         # Verify subprocess.run was called
         mock_run.assert_called_once()
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_generate_webapi_project_success(self, mock_run):
         """Test successful Web API project generation."""
         # Mock successful subprocess result
@@ -76,16 +75,14 @@ class TestCSharpProjectGenerator:
         mock_run.return_value = mock_result
 
         generator = CSharpProjectGenerator()
-        result = generator.generate_project(
-            "webapi", "TestWebApi", "/tmp/test_webapi", framework="net8.0"
-        )
+        result = generator.generate_project("webapi", "TestWebApi", "/tmp/test_webapi", framework="net8.0")
 
         assert result["success"] is True
         assert result["project_type"] == "webapi"
         assert result["project_name"] == "TestWebApi"
         assert result["output_path"] == "/tmp/test_webapi"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_generate_project_with_default_framework(self, mock_run):
         """Test project generation uses default framework when not specified."""
         # Mock successful subprocess result
@@ -96,9 +93,7 @@ class TestCSharpProjectGenerator:
         mock_run.return_value = mock_result
 
         generator = CSharpProjectGenerator()
-        result = generator.generate_project(
-            "console", "TestConsole", "/tmp/test_console"
-        )
+        result = generator.generate_project("console", "TestConsole", "/tmp/test_console")
 
         assert result["success"] is True
         assert "framework_used" in result
@@ -121,7 +116,7 @@ class TestCSharpProjectGenerator:
         result = generator.generate_project("console", "", "/tmp/test")
         assert result["success"] is False
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_generate_project_command_failure(self, mock_run):
         """Test project generation when command fails."""
         # Mock failed subprocess result
@@ -132,30 +127,26 @@ class TestCSharpProjectGenerator:
         mock_run.return_value = mock_result
 
         generator = CSharpProjectGenerator()
-        result = generator.generate_project(
-            "console", "TestConsole", "/tmp/test_console"
-        )
+        result = generator.generate_project("console", "TestConsole", "/tmp/test_console")
 
         assert result["success"] is False
         assert "error" in result
         assert "Command failed" in result["error"]
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_generate_project_timeout(self, mock_run):
         """Test project generation timeout handling."""
         # Mock timeout exception
         mock_run.side_effect = TimeoutError("Command timed out")
 
         generator = CSharpProjectGenerator()
-        result = generator.generate_project(
-            "console", "TestConsole", "/tmp/test_console"
-        )
+        result = generator.generate_project("console", "TestConsole", "/tmp/test_console")
 
         assert result["success"] is False
         assert "error" in result
         assert "timed out" in result["error"]
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_create_solution_success(self, mock_run):
         """Test successful solution creation."""
         # Mock successful subprocess result
@@ -172,7 +163,7 @@ class TestCSharpProjectGenerator:
         assert result["solution_name"] == "TestSolution"
         assert result["output_path"] == "/tmp"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_add_project_to_solution_success(self, mock_run):
         """Test successful project addition to solution."""
         # Mock successful subprocess result
@@ -183,9 +174,7 @@ class TestCSharpProjectGenerator:
         mock_run.return_value = mock_result
 
         generator = CSharpProjectGenerator()
-        result = generator.add_project_to_solution(
-            "/tmp/TestSolution.sln", "/tmp/TestProject/TestProject.csproj"
-        )
+        result = generator.add_project_to_solution("/tmp/TestSolution.sln", "/tmp/TestProject/TestProject.csproj")
 
         assert result["success"] is True
         assert result["solution_path"] == "/tmp/TestSolution.sln"
@@ -277,11 +266,7 @@ class TestCSharpProjectGeneratorIntegration:
         project_dir.mkdir()
 
         # Test customization
-        generator._customize_console_project(
-            str(project_dir),
-            project_name="TestProject",
-            framework="net8.0"
-        )
+        generator._customize_console_project(str(project_dir), project_name="TestProject", framework="net8.0")
 
         # Verify files were created
         readme_file = project_dir / "README.md"
@@ -317,9 +302,7 @@ class TestCSharpProjectGeneratorIntegration:
         generator = CSharpProjectGenerator(working_directory=temp_workspace)
 
         # Test with valid framework
-        result = generator.generate_project(
-            "console", "TestConsole", str(temp_workspace / "test"), framework="net8.0"
-        )
+        result = generator.generate_project("console", "TestConsole", str(temp_workspace / "test"), framework="net8.0")
 
         # Should fail due to mock, but validation should pass
         assert "validation_errors" not in result or len(result.get("validation_errors", [])) == 0
@@ -329,9 +312,7 @@ class TestCSharpProjectGeneratorIntegration:
         generator = CSharpProjectGenerator(working_directory=temp_workspace)
 
         # Test with invalid project name (lowercase)
-        result = generator.generate_project(
-            "console", "testconsole", str(temp_workspace / "test")
-        )
+        result = generator.generate_project("console", "testconsole", str(temp_workspace / "test"))
 
         # Should have validation errors
         if "validation_errors" in result:

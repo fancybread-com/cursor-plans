@@ -1,4 +1,5 @@
 """C# command templates for project generation."""
+
 import pathlib
 from typing import Any, Dict, List
 
@@ -13,7 +14,7 @@ class CSharpCommands:
         """Load C# configuration from config.yaml."""
         config_path = pathlib.Path(__file__).parent / "config.yaml"
         if config_path.exists():
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 return yaml.safe_load(f)
         return {}
 
@@ -39,7 +40,7 @@ class CSharpCommands:
                 "description": "Create a new C# console application",
                 "required_params": ["project_name", "output_path"],
                 "optional_params": ["framework", "lang_version"],
-                "post_generation": ["customize_namespace", "add_basic_structure"]
+                "post_generation": ["customize_namespace", "add_basic_structure"],
             },
             "classlib": {
                 "command": "dotnet",
@@ -47,7 +48,7 @@ class CSharpCommands:
                 "description": "Create a new C# class library",
                 "required_params": ["project_name", "output_path"],
                 "optional_params": ["framework", "lang_version"],
-                "post_generation": ["customize_namespace", "add_basic_class"]
+                "post_generation": ["customize_namespace", "add_basic_class"],
             },
             "webapi": {
                 "command": "dotnet",
@@ -55,7 +56,7 @@ class CSharpCommands:
                 "description": "Create a new C# Web API project",
                 "required_params": ["project_name", "output_path"],
                 "optional_params": ["framework", "auth", "https"],
-                "post_generation": ["customize_namespace", "add_swagger", "add_basic_controller"]
+                "post_generation": ["customize_namespace", "add_swagger", "add_basic_controller"],
             },
             "mvc": {
                 "command": "dotnet",
@@ -63,7 +64,7 @@ class CSharpCommands:
                 "description": "Create a new C# MVC project",
                 "required_params": ["project_name", "output_path"],
                 "optional_params": ["framework", "auth", "https"],
-                "post_generation": ["customize_namespace", "add_basic_views"]
+                "post_generation": ["customize_namespace", "add_basic_views"],
             },
             "blazor": {
                 "command": "dotnet",
@@ -71,7 +72,7 @@ class CSharpCommands:
                 "description": "Create a new C# Blazor Server project",
                 "required_params": ["project_name", "output_path"],
                 "optional_params": ["framework", "auth", "https"],
-                "post_generation": ["customize_namespace", "add_basic_pages"]
+                "post_generation": ["customize_namespace", "add_basic_pages"],
             },
             "xunit": {
                 "command": "dotnet",
@@ -79,7 +80,7 @@ class CSharpCommands:
                 "description": "Create a new C# xUnit test project",
                 "required_params": ["project_name", "output_path"],
                 "optional_params": ["framework"],
-                "post_generation": ["customize_namespace", "add_basic_test"]
+                "post_generation": ["customize_namespace", "add_basic_test"],
             },
             "mstest": {
                 "command": "dotnet",
@@ -87,8 +88,8 @@ class CSharpCommands:
                 "description": "Create a new C# MSTest project",
                 "required_params": ["project_name", "output_path"],
                 "optional_params": ["framework"],
-                "post_generation": ["customize_namespace", "add_basic_test"]
-            }
+                "post_generation": ["customize_namespace", "add_basic_test"],
+            },
         }
 
     @staticmethod
@@ -99,14 +100,14 @@ class CSharpCommands:
                 "command": "dotnet",
                 "args": ["new", "sln", "-n", "{solution_name}"],
                 "description": "Create a new solution file",
-                "required_params": ["solution_name"]
+                "required_params": ["solution_name"],
             },
             "add_project_to_solution": {
                 "command": "dotnet",
                 "args": ["sln", "{solution_path}", "add", "{project_path}"],
                 "description": "Add project to solution",
-                "required_params": ["solution_path", "project_path"]
-            }
+                "required_params": ["solution_path", "project_path"],
+            },
         }
 
     @staticmethod
@@ -118,26 +119,26 @@ class CSharpCommands:
                 "args": ["add", "package", "{package_name}"],
                 "description": "Add a NuGet package to the console project",
                 "required_params": ["package_name"],
-                "optional_params": ["version"]
+                "optional_params": ["version"],
             },
             "add_reference": {
                 "command": "dotnet",
                 "args": ["add", "reference", "{project_path}"],
                 "description": "Add a project reference to the console project",
-                "required_params": ["project_path"]
+                "required_params": ["project_path"],
             },
             "build": {
                 "command": "dotnet",
                 "args": ["build"],
                 "description": "Build the console project",
-                "required_params": []
+                "required_params": [],
             },
             "run": {
                 "command": "dotnet",
                 "args": ["run"],
                 "description": "Run the console project",
-                "required_params": []
-            }
+                "required_params": [],
+            },
         }
 
     @staticmethod
@@ -156,7 +157,7 @@ class CSharpCommands:
             errors.append("Project name should start with an uppercase letter (PascalCase)")
 
         # Check for invalid characters in project name
-        invalid_chars = [' ', '/', '\\', ':', '*', '?', '"', '<', '>', '|']
+        invalid_chars = [" ", "/", "\\", ":", "*", "?", '"', "<", ">", "|"]
         if any(char in project_name for char in invalid_chars):
             errors.append("Project name contains invalid characters")
 

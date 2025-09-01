@@ -98,9 +98,7 @@ class DependencyResolver:
         for phase in phases:
             for dep in phase.dependencies:
                 if dep not in phase_names:
-                    raise ValueError(
-                        f"Phase '{phase.name}' depends on unknown phase '{dep}'"
-                    )
+                    raise ValueError(f"Phase '{phase.name}' depends on unknown phase '{dep}'")
 
         # Check for cycles
         if self._has_cycles(phases):
@@ -186,9 +184,7 @@ class DependencyResolver:
 
         # Check if all phases were processed
         if len(ordered_phases) != len(phases):
-            raise ValueError(
-                "Circular dependency detected (should have been caught earlier)"
-            )
+            raise ValueError("Circular dependency detected (should have been caught earlier)")
 
         return ordered_phases
 

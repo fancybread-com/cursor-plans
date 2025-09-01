@@ -1,4 +1,5 @@
 """Tests for command executor functionality."""
+
 import shutil
 import tempfile
 from pathlib import Path
@@ -15,11 +16,7 @@ class TestCommandResult:
     def test_command_result_creation(self):
         """Test CommandResult can be created with all fields."""
         result = CommandResult(
-            success=True,
-            stdout="test output",
-            stderr="",
-            return_code=0,
-            executed_command="test command"
+            success=True, stdout="test output", stderr="", return_code=0, executed_command="test command"
         )
 
         assert result.success is True
@@ -51,7 +48,7 @@ class TestCommandExecutor:
     def test_allowed_commands_default(self):
         """Test default allowed commands."""
         executor = CommandExecutor()
-        expected_commands = {'dotnet', 'git', 'npm', 'yarn', 'python', 'pip'}
+        expected_commands = {"dotnet", "git", "npm", "yarn", "python", "pip"}
         assert executor.allowed_commands == expected_commands
 
     def test_is_command_allowed(self):
@@ -87,7 +84,7 @@ class TestCommandExecutor:
         # Should be a copy, not the same object
         assert commands is not executor.allowed_commands
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_execute_successful_command(self, mock_run):
         """Test successful command execution."""
         # Mock successful subprocess result
@@ -106,7 +103,7 @@ class TestCommandExecutor:
         assert result.return_code == 0
         assert result.executed_command == "python --version"
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_execute_failed_command(self, mock_run):
         """Test failed command execution."""
         # Mock failed subprocess result
@@ -132,7 +129,7 @@ class TestCommandExecutor:
         with pytest.raises(ValueError, match="Command 'rm' is not allowed"):
             executor.execute("rm", ["-rf", "/"])
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_execute_with_custom_working_directory(self, mock_run):
         """Test command execution with custom working directory."""
         temp_dir = Path(tempfile.mkdtemp())
@@ -150,13 +147,13 @@ class TestCommandExecutor:
             # Verify subprocess.run was called with correct cwd
             mock_run.assert_called_once()
             call_args = mock_run.call_args
-            assert call_args[1]['cwd'] == temp_dir
+            assert call_args[1]["cwd"] == temp_dir
 
             assert result.success is True
         finally:
             shutil.rmtree(temp_dir)
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_execute_timeout(self, mock_run):
         """Test command execution timeout."""
         # Mock timeout exception
@@ -169,7 +166,7 @@ class TestCommandExecutor:
         assert result.stderr == "Command timed out"
         assert result.return_code == -1
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_execute_exception(self, mock_run):
         """Test command execution with general exception."""
         # Mock general exception
@@ -182,7 +179,7 @@ class TestCommandExecutor:
         assert result.stderr == "Unexpected error"
         assert result.return_code == -1
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_execute_with_complex_args(self, mock_run):
         """Test command execution with complex arguments."""
         # Mock successful subprocess result
@@ -206,7 +203,7 @@ class TestCommandExecutor:
         with pytest.raises(ValueError, match="Command 'rm' is not allowed"):
             executor.execute("rm", [])
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_execute_with_unicode_output(self, mock_run):
         """Test command execution with unicode output."""
         # Mock subprocess result with unicode

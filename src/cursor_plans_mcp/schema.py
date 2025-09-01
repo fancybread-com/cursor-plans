@@ -53,9 +53,7 @@ class Resources(BaseModel):
     """Resources specification."""
 
     files: List[FileResource] = Field(..., description="Files to create")
-    dependencies: List[Union[str, Dependency]] = Field(
-        ..., description="Package dependencies"
-    )
+    dependencies: List[Union[str, Dependency]] = Field(..., description="Package dependencies")
 
 
 class Phase(BaseModel):
@@ -139,10 +137,7 @@ class DevelopmentPlan(BaseModel):
         allowed_templates = implemented_templates + referenced_templates
 
         for file in v.files:
-            if (
-                not file.template.startswith("custom_")
-                and file.template not in allowed_templates
-            ):
+            if not file.template.startswith("custom_") and file.template not in allowed_templates:
                 raise ValueError(
                     f"Unknown template '{file.template}'. Use 'custom_{file.template}' for custom templates"
                 )

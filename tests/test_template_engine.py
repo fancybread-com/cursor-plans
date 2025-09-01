@@ -1,4 +1,5 @@
 """Tests for template engine functionality."""
+
 import shutil
 import tempfile
 from pathlib import Path
@@ -100,13 +101,7 @@ class TestTemplateEngine:
 
         types = engine.get_supported_template_types()
 
-        expected_types = [
-            "csharp_console",
-            "csharp_project",
-            "command_template",
-            "file_template",
-            "default_template"
-        ]
+        expected_types = ["csharp_console", "csharp_project", "command_template", "file_template", "default_template"]
 
         assert set(types) == set(expected_types)
 
@@ -126,10 +121,7 @@ class TestTemplateEngineProcessing:
         engine = TemplateEngine()
 
         result = engine.process_template_type(
-            "default_template",
-            "test_template",
-            str(temp_workspace / "test.py"),
-            {"param1": "value1"}
+            "default_template", "test_template", str(temp_workspace / "test.py"), {"param1": "value1"}
         )
 
         assert result["success"] is True
@@ -152,10 +144,7 @@ class TestTemplateEngineProcessing:
         engine.register_template("greeting", template_content)
 
         result = engine.process_template_type(
-            "file_template",
-            "greeting",
-            str(temp_workspace / "greeting.txt"),
-            {"name": "Alice", "age": 30}
+            "file_template", "greeting", str(temp_workspace / "greeting.txt"), {"name": "Alice", "age": 30}
         )
 
         assert result["success"] is True
@@ -172,17 +161,12 @@ class TestTemplateEngineProcessing:
         """Test processing file template that doesn't exist."""
         engine = TemplateEngine()
 
-        result = engine.process_template_type(
-            "file_template",
-            "nonexistent",
-            str(temp_workspace / "test.txt"),
-            {}
-        )
+        result = engine.process_template_type("file_template", "nonexistent", str(temp_workspace / "test.txt"), {})
 
         assert result["success"] is False
         assert "Template 'nonexistent' not found" in result["error"]
 
-    @patch('src.cursor_plans_mcp.execution.command_executor.CommandExecutor')
+    @patch("src.cursor_plans_mcp.execution.command_executor.CommandExecutor")
     def test_process_command_template_success(self, mock_executor_class, temp_workspace):
         """Test processing command template successfully."""
         # Mock command executor
@@ -197,10 +181,7 @@ class TestTemplateEngineProcessing:
         engine = TemplateEngine()
 
         result = engine.process_template_type(
-            "command_template",
-            "python",
-            str(temp_workspace / "output"),
-            {"args": ["--version"]}
+            "command_template", "python", str(temp_workspace / "output"), {"args": ["--version"]}
         )
 
         assert result["success"] is True
@@ -210,7 +191,7 @@ class TestTemplateEngineProcessing:
         # Verify command executor was called
         mock_executor.execute.assert_called_once_with("python", ["--version"], cwd=temp_workspace)
 
-    @patch('src.cursor_plans_mcp.execution.command_executor.CommandExecutor')
+    @patch("src.cursor_plans_mcp.execution.command_executor.CommandExecutor")
     def test_process_command_template_failure(self, mock_executor_class, temp_workspace):
         """Test processing command template with failure."""
         # Mock command executor failure
@@ -225,17 +206,14 @@ class TestTemplateEngineProcessing:
         engine = TemplateEngine()
 
         result = engine.process_template_type(
-            "command_template",
-            "python",
-            str(temp_workspace / "output"),
-            {"args": ["--invalid"]}
+            "command_template", "python", str(temp_workspace / "output"), {"args": ["--invalid"]}
         )
 
         assert result["success"] is False
         assert result["type"] == "command_execution"
         assert "Command failed" in result["error"]
 
-    @patch('src.cursor_plans_mcp.templates.languages.csharp.generators.CSharpProjectGenerator')
+    @patch("src.cursor_plans_mcp.templates.languages.csharp.generators.CSharpProjectGenerator")
     def test_process_csharp_console_success(self, mock_generator_class, temp_workspace):
         """Test processing C# console template successfully."""
         # Mock C# generator
@@ -244,7 +222,7 @@ class TestTemplateEngineProcessing:
             "success": True,
             "project_name": "TestConsole",
             "output_path": str(temp_workspace / "TestConsole"),
-            "command_output": "Project created successfully"
+            "command_output": "Project created successfully",
         }
         mock_generator.generate_project.return_value = mock_result
         mock_generator_class.return_value = mock_generator
@@ -255,7 +233,7 @@ class TestTemplateEngineProcessing:
             "csharp_console",
             "console",
             str(temp_workspace / "TestConsole"),
-            {"project_name": "TestConsole", "framework": "net8.0"}
+            {"project_name": "TestConsole", "framework": "net8.0"},
         )
 
         assert result["success"] is True
@@ -264,11 +242,14 @@ class TestTemplateEngineProcessing:
 
         # Verify generator was called
         mock_generator.generate_project.assert_called_once_with(
-            "console", "TestConsole", str(temp_workspace / "TestConsole"),
-            project_name="TestConsole", framework="net8.0"
+            "console",
+            "TestConsole",
+            str(temp_workspace / "TestConsole"),
+            project_name="TestConsole",
+            framework="net8.0",
         )
 
-    @patch('src.cursor_plans_mcp.templates.languages.csharp.generators.CSharpProjectGenerator')
+    @patch("src.cursor_plans_mcp.templates.languages.csharp.generators.CSharpProjectGenerator")
     def test_process_csharp_project_success(self, mock_generator_class, temp_workspace):
         """Test processing C# project template successfully."""
         # Mock C# generator
@@ -277,7 +258,7 @@ class TestTemplateEngineProcessing:
             "success": True,
             "project_type": "webapi",
             "project_name": "TestWebApi",
-            "output_path": str(temp_workspace / "TestWebApi")
+            "output_path": str(temp_workspace / "TestWebApi"),
         }
         mock_generator.generate_project.return_value = mock_result
         mock_generator_class.return_value = mock_generator
@@ -288,7 +269,7 @@ class TestTemplateEngineProcessing:
             "csharp_project",
             "webapi",
             str(temp_workspace / "TestWebApi"),
-            {"project_name": "TestWebApi", "framework": "net8.0"}
+            {"project_name": "TestWebApi", "framework": "net8.0"},
         )
 
         assert result["success"] is True
@@ -302,14 +283,10 @@ class TestTemplateEngineProcessing:
 
         # Mock import error by patching the import inside the method
         with patch(
-            'src.cursor_plans_mcp.templates.languages.csharp.generators.CSharpProjectGenerator',
-            side_effect=ImportError
+            "src.cursor_plans_mcp.templates.languages.csharp.generators.CSharpProjectGenerator", side_effect=ImportError
         ):
             result = engine.process_template_type(
-                "csharp_console",
-                "console",
-                str(temp_workspace / "TestConsole"),
-                {"project_name": "TestConsole"}
+                "csharp_console", "console", str(temp_workspace / "TestConsole"), {"project_name": "TestConsole"}
             )
 
         assert result["success"] is False
@@ -320,12 +297,7 @@ class TestTemplateEngineProcessing:
         """Test processing unknown template type."""
         engine = TemplateEngine()
 
-        result = engine.process_template_type(
-            "unknown_type",
-            "test",
-            str(temp_workspace / "test.txt"),
-            {}
-        )
+        result = engine.process_template_type("unknown_type", "test", str(temp_workspace / "test.txt"), {})
 
         assert result["success"] is True
         assert result["type"] == "default_template"
@@ -337,12 +309,7 @@ class TestTemplateEngineProcessing:
         # Try to create a file in a nested directory
         nested_path = temp_workspace / "nested" / "deep" / "test.py"
 
-        result = engine.process_template_type(
-            "default_template",
-            "test_template",
-            str(nested_path),
-            {}
-        )
+        result = engine.process_template_type("default_template", "test_template", str(nested_path), {})
 
         assert result["success"] is True
         assert nested_path.exists()
@@ -379,17 +346,10 @@ if __name__ == "__main__":
         engine.register_template("python_app", template_content)
 
         # Process the template
-        parameters = {
-            "project_name": "MyApp",
-            "framework": "Python 3.9",
-            "author": "Alice"
-        }
+        parameters = {"project_name": "MyApp", "framework": "Python 3.9", "author": "Alice"}
 
         result = engine.process_template_type(
-            "file_template",
-            "python_app",
-            str(temp_workspace / "main.py"),
-            parameters
+            "file_template", "python_app", str(temp_workspace / "main.py"), parameters
         )
 
         assert result["success"] is True
@@ -424,14 +384,11 @@ class {{ project.name }}:
         parameters = {
             "project": {"name": "MyApp", "version": "1.0.0"},
             "dependencies": ["fastapi", "uvicorn", "pydantic"],
-            "config": {"environment": "production"}
+            "config": {"environment": "production"},
         }
 
         result = engine.process_template_type(
-            "file_template",
-            "complex_app",
-            str(temp_workspace / "app.py"),
-            parameters
+            "file_template", "complex_app", str(temp_workspace / "app.py"), parameters
         )
 
         assert result["success"] is True

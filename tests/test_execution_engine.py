@@ -38,9 +38,7 @@ class TestPlanExecutor:
         """Sample plan data for testing."""
         return {
             "project": {"name": "test-project", "version": "1.0.0"},
-            "target_state": {
-                "architecture": [{"language": "python"}, {"framework": "FastAPI"}]
-            },
+            "target_state": {"architecture": [{"language": "python"}, {"framework": "FastAPI"}]},
             "resources": {
                 "files": [
                     {
@@ -111,9 +109,7 @@ class TestPlanExecutor:
         """Test dry run execution."""
 
         # Mock the dependency resolver
-        with patch.object(
-            executor.dependency_resolver, "create_execution_plan"
-        ) as mock_create:
+        with patch.object(executor.dependency_resolver, "create_execution_plan") as mock_create:
             mock_plan = ExecutionPlan(
                 phases=[
                     Phase(
@@ -145,9 +141,7 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_actual_execution_success(self, executor, sample_plan_file):
         """Test successful actual execution."""
-        with patch.object(
-            executor.snapshot_manager, "create_snapshot"
-        ) as mock_snapshot:
+        with patch.object(executor.snapshot_manager, "create_snapshot") as mock_snapshot:
             mock_snapshot.return_value = "test-snapshot-id"
 
             result = await executor.execute_plan(sample_plan_file, dry_run=False)
@@ -160,21 +154,13 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_execution_failure_with_rollback(self, executor, sample_plan_file):
         """Test execution failure triggers rollback."""
-        with patch.object(
-            executor.snapshot_manager, "create_snapshot"
-        ) as mock_snapshot:
-            with patch.object(
-                executor.snapshot_manager, "restore_snapshot"
-            ) as mock_restore:
+        with patch.object(executor.snapshot_manager, "create_snapshot") as mock_snapshot:
+            with patch.object(executor.snapshot_manager, "restore_snapshot") as mock_restore:
                 mock_snapshot.return_value = "test-snapshot-id"
 
                 # Mock execution to fail
-                with patch.object(
-                    executor, "_execute_plan", side_effect=Exception("Test error")
-                ):
-                    result = await executor.execute_plan(
-                        sample_plan_file, dry_run=False
-                    )
+                with patch.object(executor, "_execute_plan", side_effect=Exception("Test error")):
+                    result = await executor.execute_plan(sample_plan_file, dry_run=False)
 
                     assert result.success is False
                     assert result.status == ExecutionStatus.FAILED
@@ -184,9 +170,7 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_rollback_to_snapshot(self, executor):
         """Test rollback functionality."""
-        with patch.object(
-            executor.snapshot_manager, "restore_snapshot"
-        ) as mock_restore:
+        with patch.object(executor.snapshot_manager, "restore_snapshot") as mock_restore:
             mock_restore.return_value = True
 
             result = await executor.rollback_to_snapshot("test-snapshot")
@@ -198,9 +182,7 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_rollback_failure(self, executor):
         """Test rollback failure handling."""
-        with patch.object(
-            executor.snapshot_manager, "restore_snapshot"
-        ) as mock_restore:
+        with patch.object(executor.snapshot_manager, "restore_snapshot") as mock_restore:
             mock_restore.return_value = False
 
             result = await executor.rollback_to_snapshot("test-snapshot")
@@ -241,9 +223,7 @@ class TestPlanExecutor:
             changes = await executor._execute_phase(phase, sample_plan_data)
 
             assert len(changes) > 0
-            mock_task.assert_called_once_with(
-                "setup_project_structure", sample_plan_data
-            )
+            mock_task.assert_called_once_with("setup_project_structure", sample_plan_data)
 
     @pytest.mark.asyncio
     async def test_execute_task_mapping(self, executor, sample_plan_data):
@@ -251,9 +231,7 @@ class TestPlanExecutor:
         with patch.object(executor, "_setup_project_structure") as mock_setup:
             mock_setup.return_value = ["Created directory: src"]
 
-            changes = await executor._execute_task(
-                "setup_project_structure", sample_plan_data
-            )
+            changes = await executor._execute_task("setup_project_structure", sample_plan_data)
 
             assert len(changes) > 0
             mock_setup.assert_called_once_with(sample_plan_data)
@@ -299,9 +277,7 @@ class TestPlanExecutor:
     @pytest.mark.asyncio
     async def test_generate_file_content(self, executor):
         """Test file content generation."""
-        content = executor._generate_file_content(
-            "main.py", "entry_point", "fastapi_main"
-        )
+        content = executor._generate_file_content("main.py", "entry_point", "fastapi_main")
 
         assert "from fastapi import FastAPI" in content
         assert "app = FastAPI" in content

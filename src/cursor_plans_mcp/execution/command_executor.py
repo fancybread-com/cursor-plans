@@ -1,4 +1,5 @@
 """Command execution engine for template generation."""
+
 import pathlib
 import subprocess
 from dataclasses import dataclass
@@ -8,6 +9,7 @@ from typing import List, Optional
 @dataclass
 class CommandResult:
     """Result of command execution."""
+
     success: bool
     stdout: str
     stderr: str
@@ -20,12 +22,9 @@ class CommandExecutor:
 
     def __init__(self, working_directory: Optional[pathlib.Path] = None):
         self.working_directory = working_directory or pathlib.Path.cwd()
-        self.allowed_commands = {
-            'dotnet', 'git', 'npm', 'yarn', 'python', 'pip'
-        }
+        self.allowed_commands = {"dotnet", "git", "npm", "yarn", "python", "pip"}
 
-    def execute(self, command: str, args: List[str],
-                cwd: Optional[pathlib.Path] = None) -> CommandResult:
+    def execute(self, command: str, args: List[str], cwd: Optional[pathlib.Path] = None) -> CommandResult:
         """Execute a command with safety checks."""
         if not self._is_command_allowed(command):
             raise ValueError(f"Command '{command}' is not allowed")
@@ -39,7 +38,7 @@ class CommandExecutor:
                 cwd=cwd,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
             )
 
             return CommandResult(
@@ -47,7 +46,7 @@ class CommandExecutor:
                 stdout=result.stdout,
                 stderr=result.stderr,
                 return_code=result.returncode,
-                executed_command=' '.join(full_command)
+                executed_command=" ".join(full_command),
             )
 
         except subprocess.TimeoutExpired:
@@ -56,15 +55,11 @@ class CommandExecutor:
                 stdout="",
                 stderr="Command timed out after 5 minutes",
                 return_code=-1,
-                executed_command=' '.join(full_command)
+                executed_command=" ".join(full_command),
             )
         except Exception as e:
             return CommandResult(
-                success=False,
-                stdout="",
-                stderr=str(e),
-                return_code=-1,
-                executed_command=' '.join(full_command)
+                success=False, stdout="", stderr=str(e), return_code=-1, executed_command=" ".join(full_command)
             )
 
     def _is_command_allowed(self, command: str) -> bool:

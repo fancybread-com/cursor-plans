@@ -20,9 +20,7 @@ class TestValidationEngine:
             yaml.dump(sample_basic_plan, f)
 
         engine = ValidationEngine()
-        result = await engine.validate_plan_file(
-            str(plan_file), check_cursor_rules=False
-        )
+        result = await engine.validate_plan_file(str(plan_file), check_cursor_rules=False)
 
         # Should have some warnings but no errors
         assert len(result.errors) == 0
@@ -39,9 +37,7 @@ class TestValidationEngine:
             yaml.dump(sample_invalid_plan, f)
 
         engine = ValidationEngine()
-        result = await engine.validate_plan_file(
-            str(plan_file), check_cursor_rules=False
-        )
+        result = await engine.validate_plan_file(str(plan_file), check_cursor_rules=False)
 
         # Should have errors
         assert len(result.errors) > 0
@@ -66,9 +62,7 @@ class TestValidationEngine:
     async def test_validate_plan_data_directly(self, sample_basic_plan):
         """Test validation of plan data without file."""
         engine = ValidationEngine()
-        result = await engine.validate_plan_data(
-            sample_basic_plan, "test_plan", check_cursor_rules=False
-        )
+        result = await engine.validate_plan_data(sample_basic_plan, "test_plan", check_cursor_rules=False)
 
         assert result.is_valid
         assert len(result.errors) == 0
@@ -84,14 +78,10 @@ class TestValidationEngine:
         engine = ValidationEngine()
 
         # Normal mode
-        result_normal = await engine.validate_plan_file(
-            str(plan_file), strict_mode=False, check_cursor_rules=False
-        )
+        result_normal = await engine.validate_plan_file(str(plan_file), strict_mode=False, check_cursor_rules=False)
 
         # Strict mode
-        result_strict = await engine.validate_plan_file(
-            str(plan_file), strict_mode=True, check_cursor_rules=False
-        )
+        result_strict = await engine.validate_plan_file(str(plan_file), strict_mode=True, check_cursor_rules=False)
 
         # In strict mode, warnings become errors
         if result_normal.has_warnings:
@@ -139,12 +129,8 @@ class TestSyntaxValidator:
 
         assert len(result.errors) >= 3  # Missing sections
         error_messages = [error.message for error in result.errors]
-        assert any(
-            "Missing required section: target_state" in msg for msg in error_messages
-        )
-        assert any(
-            "Missing required section: resources" in msg for msg in error_messages
-        )
+        assert any("Missing required section: target_state" in msg for msg in error_messages)
+        assert any("Missing required section: resources" in msg for msg in error_messages)
         assert any("Missing required section: phases" in msg for msg in error_messages)
 
     @pytest.mark.asyncio
@@ -163,10 +149,7 @@ class TestSyntaxValidator:
         result = await validator.validate(invalid_plan, "test.devplan")
 
         assert len(result.errors) >= 1
-        assert any(
-            "Project section must be a dictionary" in error.message
-            for error in result.errors
-        )
+        assert any("Project section must be a dictionary" in error.message for error in result.errors)
 
 
 class TestSchemaValidator:
@@ -261,9 +244,7 @@ class TestCursorRulesValidator:
 
     @pytest.mark.skip(reason="Cursor rules validation feature not fully implemented")
     @pytest.mark.asyncio
-    async def test_with_cursor_rules(
-        self, sample_basic_plan, sample_cursorrules, temp_dir
-    ):
+    async def test_with_cursor_rules(self, sample_basic_plan, sample_cursorrules, temp_dir):
         """Test validation with Cursor rules present."""
         # Change to temp directory for rules file discovery
         import os
@@ -302,10 +283,7 @@ class TestCursorRulesValidator:
 
         # Should suggest creating rules file
         assert len(result.suggestions) >= 1
-        assert any(
-            "No .cursorrules file found" in suggestion.message
-            for suggestion in result.suggestions
-        )
+        assert any("No .cursorrules file found" in suggestion.message for suggestion in result.suggestions)
 
 
 class TestValidationResult:

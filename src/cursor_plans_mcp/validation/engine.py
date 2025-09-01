@@ -86,9 +86,7 @@ class ValidationEngine:
 
         # Skip Cursor Rules validation if disabled
         if not check_cursor_rules:
-            validators_to_run = [
-                v for v in validators_to_run if not isinstance(v, CursorRulesValidator)
-            ]
+            validators_to_run = [v for v in validators_to_run if not isinstance(v, CursorRulesValidator)]
 
         for validator in validators_to_run:
             try:
@@ -144,9 +142,7 @@ class ValidationEngine:
 
         # Skip Cursor Rules validation if disabled
         if not check_cursor_rules:
-            validators_to_run = [
-                v for v in validators_to_run if not isinstance(v, CursorRulesValidator)
-            ]
+            validators_to_run = [v for v in validators_to_run if not isinstance(v, CursorRulesValidator)]
 
         for validator in validators_to_run:
             try:
@@ -187,9 +183,7 @@ class ValidationEngine:
             if data is None:
                 raise ValueError("Plan file is empty or contains only comments")
             if not isinstance(data, dict):
-                raise ValueError(
-                    "Plan file must contain a YAML dictionary at the root level"
-                )
+                raise ValueError("Plan file must contain a YAML dictionary at the root level")
             return data
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML syntax: {str(e)}")
@@ -206,8 +200,7 @@ class ValidationEngine:
             {
                 "name": validator.name,
                 "class": validator.__class__.__name__,
-                "description": validator.__class__.__doc__
-                or "No description available",
+                "description": validator.__class__.__doc__ or "No description available",
             }
             for validator in self.validators
         ]

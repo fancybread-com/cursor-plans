@@ -192,9 +192,7 @@ class TestDependencyResolver:
         assert ordered_phases[0].name == "phase1"
         assert ordered_phases[1].name == "phase2"
 
-    def test_resolve_execution_order_with_dependencies(
-        self, resolver, sample_plan_data
-    ):
+    def test_resolve_execution_order_with_dependencies(self, resolver, sample_plan_data):
         """Test execution order resolution with dependencies."""
         phases = resolver._parse_phases(sample_plan_data)
         resolver._validate_dependencies(phases)
@@ -224,9 +222,7 @@ class TestDependencyResolver:
         phases = [
             Phase(name="A", data={}, priority=1, dependencies=[]),
             Phase(name="B", data={}, priority=3, dependencies=["A"]),
-            Phase(
-                name="C", data={}, priority=2, dependencies=["A"]
-            ),  # Lower priority than B
+            Phase(name="C", data={}, priority=2, dependencies=["A"]),  # Lower priority than B
         ]
 
         ordered_phases = resolver._resolve_execution_order(phases)

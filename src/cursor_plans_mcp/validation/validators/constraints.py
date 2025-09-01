@@ -17,9 +17,7 @@ class ConstraintValidator(BaseValidator):
     def name(self) -> str:
         return "Constraint validation"
 
-    async def validate(
-        self, plan_data: Dict[str, Any], plan_file_path: str
-    ) -> ValidationResult:
+    async def validate(self, plan_data: Dict[str, Any], plan_file_path: str) -> ValidationResult:
         result = ValidationResult()
 
         # Load custom constraints (could be from a constraints.yaml file or embedded in plan)
@@ -88,21 +86,13 @@ class ConstraintValidator(BaseValidator):
 
         # Route to specific constraint handlers
         if constraint_type == "phase_validation":
-            self._validate_phase_constraint(
-                constraint, plan_data, plan_file_path, result, severity
-            )
+            self._validate_phase_constraint(constraint, plan_data, plan_file_path, result, severity)
         elif constraint_type == "resource_validation":
-            self._validate_resource_constraint(
-                constraint, plan_data, plan_file_path, result, severity
-            )
+            self._validate_resource_constraint(constraint, plan_data, plan_file_path, result, severity)
         elif constraint_type == "architecture_validation":
-            self._validate_architecture_constraint(
-                constraint, plan_data, plan_file_path, result, severity
-            )
+            self._validate_architecture_constraint(constraint, plan_data, plan_file_path, result, severity)
         elif constraint_type == "dependency_validation":
-            self._validate_dependency_constraint(
-                constraint, plan_data, plan_file_path, result, severity
-            )
+            self._validate_dependency_constraint(constraint, plan_data, plan_file_path, result, severity)
 
     def _validate_phase_constraint(
         self,
@@ -159,9 +149,7 @@ class ConstraintValidator(BaseValidator):
 
         if constraint_name == "unique_file_paths":
             if "resources" in plan_data and isinstance(plan_data["resources"], dict):
-                if "files" in plan_data["resources"] and isinstance(
-                    plan_data["resources"]["files"], list
-                ):
+                if "files" in plan_data["resources"] and isinstance(plan_data["resources"]["files"], list):
                     file_paths = {}
                     for i, file_resource in enumerate(plan_data["resources"]["files"]):
                         if isinstance(file_resource, dict) and "path" in file_resource:
@@ -199,16 +187,12 @@ class ConstraintValidator(BaseValidator):
         # Custom dependency constraints would be implemented here
         pass
 
-    def _validate_builtin_constraints(
-        self, plan_data: Dict[str, Any], plan_file_path: str, result: ValidationResult
-    ):
+    def _validate_builtin_constraints(self, plan_data: Dict[str, Any], plan_file_path: str, result: ValidationResult):
         """Apply built-in constraint validations."""
 
         # Validate reasonable resource counts
         if "resources" in plan_data and isinstance(plan_data["resources"], dict):
-            if "files" in plan_data["resources"] and isinstance(
-                plan_data["resources"]["files"], list
-            ):
+            if "files" in plan_data["resources"] and isinstance(plan_data["resources"]["files"], list):
                 file_count = len(plan_data["resources"]["files"])
 
                 if file_count > 50:
@@ -260,12 +244,7 @@ class ConstraintValidator(BaseValidator):
                         )
 
                     # Check for special characters that might cause issues
-                    if (
-                        not name.replace("-", "")
-                        .replace("_", "")
-                        .replace(" ", "")
-                        .isalnum()
-                    ):
+                    if not name.replace("-", "").replace("_", "").replace(" ", "").isalnum():
                         result.add_suggestion(
                             f"Project name '{name}' contains special characters",
                             f"project.name in {plan_file_path}",

@@ -1,4 +1,5 @@
 """Tests for C# console template functionality."""
+
 import shutil
 import tempfile
 
@@ -74,11 +75,7 @@ class TestCSharpProjectGenerator:
         generator = CSharpProjectGenerator()
 
         # Test with valid parameters
-        result = generator.generate_project(
-            "console",
-            "TestConsole",
-            "/tmp/test_console"
-        )
+        result = generator.generate_project("console", "TestConsole", "/tmp/test_console")
 
         # Should fail because we can't actually run dotnet in tests
         # But validation should pass
@@ -117,17 +114,19 @@ class TestTemplateProcessor:
         processor = TemplateProcessor()
 
         # Valid parameters
-        errors = processor.validate_csharp_parameters("console", {
-            "project_name": "TestConsole",
-            "output_path": "/tmp/test"
-        })
+        errors = processor.validate_csharp_parameters(
+            "console", {"project_name": "TestConsole", "output_path": "/tmp/test"}
+        )
         assert len(errors) == 0
 
         # Invalid parameters
-        errors = processor.validate_csharp_parameters("console", {
-            "project_name": "testconsole",  # lowercase
-            "output_path": "/tmp/test"
-        })
+        errors = processor.validate_csharp_parameters(
+            "console",
+            {
+                "project_name": "testconsole",  # lowercase
+                "output_path": "/tmp/test",
+            },
+        )
         assert len(errors) > 0
 
 

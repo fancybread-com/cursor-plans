@@ -1,4 +1,5 @@
 """Tests for C# templates functionality."""
+
 import shutil
 import tempfile
 from pathlib import Path
@@ -145,12 +146,7 @@ class TestTemplateProcessor:
         processor = TemplateProcessor()
         types = processor.get_supported_template_types()
 
-        expected_types = [
-            "command_template",
-            "file_template",
-            "csharp_project",
-            "csharp_console"
-        ]
+        expected_types = ["command_template", "file_template", "csharp_project", "csharp_console"]
 
         for template_type in expected_types:
             assert template_type in types
@@ -167,20 +163,22 @@ class TestTemplateProcessor:
     def test_validate_csharp_parameters_success(self):
         """Test successful C# parameter validation."""
         processor = TemplateProcessor()
-        errors = processor.validate_csharp_parameters("console", {
-            "project_name": "TestConsole",
-            "output_path": "/tmp/test"
-        })
+        errors = processor.validate_csharp_parameters(
+            "console", {"project_name": "TestConsole", "output_path": "/tmp/test"}
+        )
 
         assert len(errors) == 0
 
     def test_validate_csharp_parameters_invalid(self):
         """Test C# parameter validation with invalid parameters."""
         processor = TemplateProcessor()
-        errors = processor.validate_csharp_parameters("console", {
-            "project_name": "testconsole",  # lowercase
-            "output_path": "/tmp/test"
-        })
+        errors = processor.validate_csharp_parameters(
+            "console",
+            {
+                "project_name": "testconsole",  # lowercase
+                "output_path": "/tmp/test",
+            },
+        )
 
         assert len(errors) > 0
         assert any("uppercase" in error.lower() for error in errors)
@@ -188,10 +186,9 @@ class TestTemplateProcessor:
     def test_validate_csharp_parameters_unknown_type(self):
         """Test C# parameter validation with unknown project type."""
         processor = TemplateProcessor()
-        errors = processor.validate_csharp_parameters("unknown", {
-            "project_name": "TestConsole",
-            "output_path": "/tmp/test"
-        })
+        errors = processor.validate_csharp_parameters(
+            "unknown", {"project_name": "TestConsole", "output_path": "/tmp/test"}
+        )
 
         assert len(errors) == 0  # Should return empty list for unknown types
 
@@ -294,18 +291,14 @@ class TestCSharpTemplateIntegration:
         processor = TemplateProcessor()
 
         # Test valid parameters
-        valid_params = {
-            "project_name": "TestConsole",
-            "output_path": "/tmp/test",
-            "framework": "net8.0"
-        }
+        valid_params = {"project_name": "TestConsole", "output_path": "/tmp/test", "framework": "net8.0"}
         errors = processor.validate_csharp_parameters("console", valid_params)
         assert len(errors) == 0
 
         # Test invalid parameters
         invalid_params = {
             "project_name": "testconsole",  # lowercase
-            "output_path": "/tmp/test"
+            "output_path": "/tmp/test",
         }
         errors = processor.validate_csharp_parameters("console", invalid_params)
         assert len(errors) > 0
@@ -326,8 +319,7 @@ class TestCSharpTemplateIntegration:
 
         # This would be done by the template engine in practice
         substituted_args = [
-            arg.replace("{project_name}", project_name).replace("{output_path}", output_path)
-            for arg in args
+            arg.replace("{project_name}", project_name).replace("{output_path}", output_path) for arg in args
         ]
 
         assert project_name in substituted_args

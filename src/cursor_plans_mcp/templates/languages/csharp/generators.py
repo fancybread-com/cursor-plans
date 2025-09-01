@@ -1,4 +1,5 @@
 """C# project generators using command templates."""
+
 import pathlib
 import subprocess
 from typing import Any, Dict, List, Optional
@@ -13,8 +14,7 @@ class CSharpProjectGenerator:
         self.working_directory = working_directory or pathlib.Path.cwd()
         self.commands = CSharpCommands()
 
-    def generate_project(self, project_type: str, project_name: str,
-                        output_path: str, **kwargs) -> Dict[str, Any]:
+    def generate_project(self, project_type: str, project_name: str, output_path: str, **kwargs) -> Dict[str, Any]:
         """Generate a C# project of the specified type."""
         project_commands = self.commands.get_project_commands()
 
@@ -24,11 +24,7 @@ class CSharpProjectGenerator:
         command_config = project_commands[project_type]
 
         # Prepare parameters
-        params = {
-            "project_name": project_name,
-            "output_path": output_path,
-            **kwargs
-        }
+        params = {"project_name": project_name, "output_path": output_path, **kwargs}
 
         # Set default framework if not provided
         if "framework" not in params:
@@ -38,11 +34,7 @@ class CSharpProjectGenerator:
         if project_type == "console":
             validation_errors = self.commands.validate_console_params(project_name, output_path, **kwargs)
             if validation_errors:
-                return {
-                    "success": False,
-                    "error": "Validation failed",
-                    "validation_errors": validation_errors
-                }
+                return {"success": False, "error": "Validation failed", "validation_errors": validation_errors}
 
         required_params = command_config.get("required_params", [])
         for param in required_params:
@@ -51,11 +43,7 @@ class CSharpProjectGenerator:
 
         # Execute command
         args = command_config["args"]
-        result = self._execute_command(
-            command_config["command"],
-            args,
-            cwd=pathlib.Path(output_path).parent
-        )
+        result = self._execute_command(command_config["command"], args, cwd=pathlib.Path(output_path).parent)
 
         if result["success"]:
             # Post-generation customization
@@ -68,14 +56,10 @@ class CSharpProjectGenerator:
                 "output_path": output_path,
                 "command_output": result["output"],
                 "post_generation": command_config.get("post_generation", []),
-                "framework_used": params.get("framework")
+                "framework_used": params.get("framework"),
             }
         else:
-            return {
-                "success": False,
-                "error": result["error"],
-                "command_output": result["output"]
-            }
+            return {"success": False, "error": result["error"], "command_output": result["output"]}
 
     def create_solution(self, solution_name: str, output_path: str) -> Dict[str, Any]:
         """Create a new solution file."""
@@ -84,18 +68,14 @@ class CSharpProjectGenerator:
 
         args = command_config["args"]
 
-        result = self._execute_command(
-            command_config["command"],
-            args,
-            cwd=pathlib.Path(output_path)
-        )
+        result = self._execute_command(command_config["command"], args, cwd=pathlib.Path(output_path))
 
         return {
             "success": result["success"],
             "solution_name": solution_name,
             "output_path": output_path,
             "command_output": result["output"],
-            "error": result["error"] if not result["success"] else None
+            "error": result["error"] if not result["success"] else None,
         }
 
     def add_project_to_solution(self, solution_path: str, project_path: str) -> Dict[str, Any]:
@@ -105,29 +85,20 @@ class CSharpProjectGenerator:
 
         args = command_config["args"]
 
-        result = self._execute_command(
-            command_config["command"],
-            args,
-            cwd=pathlib.Path(solution_path).parent
-        )
+        result = self._execute_command(command_config["command"], args, cwd=pathlib.Path(solution_path).parent)
 
         return {
             "success": result["success"],
             "solution_path": solution_path,
             "project_path": project_path,
             "command_output": result["output"],
-            "error": result["error"] if not result["success"] else None
+            "error": result["error"] if not result["success"] else None,
         }
 
-    def _execute_command(self, command: str, args: List[str],
-                        cwd: Optional[pathlib.Path] = None) -> Dict[str, Any]:
+    def _execute_command(self, command: str, args: List[str], cwd: Optional[pathlib.Path] = None) -> Dict[str, Any]:
         """Execute a command with safety checks."""
         if not self._is_command_allowed(command):
-            return {
-                "success": False,
-                "error": f"Command '{command}' is not allowed",
-                "output": ""
-            }
+            return {"success": False, "error": f"Command '{command}' is not allowed", "output": ""}
 
         cwd = cwd or self.working_directory
         full_command = [command] + args
@@ -138,32 +109,24 @@ class CSharpProjectGenerator:
                 cwd=cwd,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 minute timeout
+                timeout=300,  # 5 minute timeout
             )
 
             return {
                 "success": result.returncode == 0,
                 "output": result.stdout,
                 "error": result.stderr if result.returncode != 0 else None,
-                "return_code": result.returncode
+                "return_code": result.returncode,
             }
 
         except subprocess.TimeoutExpired:
-            return {
-                "success": False,
-                "error": "Command timed out after 5 minutes",
-                "output": ""
-            }
+            return {"success": False, "error": "Command timed out after 5 minutes", "output": ""}
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "output": ""
-            }
+            return {"success": False, "error": str(e), "output": ""}
 
     def _is_command_allowed(self, command: str) -> bool:
         """Check if command is in allowed list."""
-        allowed_commands = {'dotnet', 'git', 'npm', 'yarn', 'python', 'pip'}
+        allowed_commands = {"dotnet", "git", "npm", "yarn", "python", "pip"}
         return command in allowed_commands
 
     def _customize_project(self, project_type: str, project_path: str, **kwargs):
@@ -191,12 +154,12 @@ class CSharpProjectGenerator:
     def _enhance_program_file(self, program_file: pathlib.Path, **kwargs):
         """Enhance the Program.cs file with better structure."""
         try:
-            content = program_file.read_text(encoding='utf-8')
+            content = program_file.read_text(encoding="utf-8")
 
             # Check if it's the basic template
-            if "Console.WriteLine(\"Hello, World!\")" in content:
+            if 'Console.WriteLine("Hello, World!")' in content:
                 enhanced_content = self._get_enhanced_program_content(**kwargs)
-                program_file.write_text(enhanced_content, encoding='utf-8')
+                program_file.write_text(enhanced_content, encoding="utf-8")
         except Exception:
             # If we can't enhance, leave the original
             pass
@@ -205,7 +168,7 @@ class CSharpProjectGenerator:
         """Get enhanced Program.cs content."""
         project_name = kwargs.get("project_name", "ConsoleApp")
 
-        return f'''using System;
+        return f"""using System;
 
 namespace {project_name}
 {{
@@ -230,14 +193,14 @@ namespace {project_name}
             Console.ReadKey();
         }}
     }}
-}}'''
+}}"""
 
     def _create_console_readme(self, readme_file: pathlib.Path, **kwargs):
         """Create a README file for the console project."""
         project_name = kwargs.get("project_name", "ConsoleApp")
         framework = kwargs.get("framework", self.commands.get_default_framework())
 
-        readme_content = f'''# {project_name}
+        readme_content = f"""# {project_name}
 
 A C# console application created with .NET.
 
@@ -286,6 +249,6 @@ dotnet publish -c Release
 ```
 
 This will create an optimized build in the `bin/Release/{framework}/publish/` directory.
-'''
+"""
 
-        readme_file.write_text(readme_content, encoding='utf-8')
+        readme_file.write_text(readme_content, encoding="utf-8")
