@@ -1,7 +1,8 @@
 """C# project generators using command templates."""
 import pathlib
 import subprocess
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from .commands import CSharpCommands
 
 
@@ -196,7 +197,7 @@ class CSharpProjectGenerator:
             if "Console.WriteLine(\"Hello, World!\")" in content:
                 enhanced_content = self._get_enhanced_program_content(**kwargs)
                 program_file.write_text(enhanced_content, encoding='utf-8')
-        except Exception as e:
+        except Exception:
             # If we can't enhance, leave the original
             pass
 

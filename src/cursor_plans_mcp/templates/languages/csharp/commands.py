@@ -1,7 +1,8 @@
 """C# command templates for project generation."""
-import yaml
 import pathlib
 from typing import Any, Dict, List
+
+import yaml
 
 
 class CSharpCommands:
